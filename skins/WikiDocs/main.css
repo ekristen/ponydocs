@@ -1,0 +1,77 @@
+body {
+    padding-top: 60px;
+    font-family: 'Montserrat', sans-serif;
+}
+
+
+#content {
+    min-height: 200px;
+}
+
+#footer {
+    background-color: #F5F5F5;
+    height: 60px;
+    margin-top: 20px;
+}
+
+.credit {
+    margin-top: 20px;
+}
+
+.muted {
+    color: #999;
+}
+
+
+div#content h1 {
+    border-bottom: 1px solid #EEEEEE;
+    margin: 20px 0 15px;
+    padding-bottom: 9px;
+    margin-top: 0px;
+}
+
+textarea#wpTextbox1 {
+    width: 98% !important;
+}
+
+.affectedVersions {
+    margin-top: 20px;
+    padding-top: 9px;
+    border-top: 1px solid #EEEEEE;
+}
+
+
+span.editsection {
+    display: none;
+}
+
+
+table.toc {
+/*    display: none;*/
+}
+
+/*
+a {
+    color: #C83025;
+}
+
+.nav-list > .active > a,
+.nav-list > .active > a:hover,
+.nav-list > .active > a:focus {
+    background-color: #C83025;
+}
+*/
+
+
+#productChange {
+    display: none;
+}
+
+.productlist div.thumbnail {
+    min-height: 175px;
+}
+
+.productmanuallist div.thumbnail {
+    min-height: 140px;
+}
+
