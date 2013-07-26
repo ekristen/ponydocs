@@ -837,6 +837,7 @@ class PonyDocsExtension
 		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( )))
 			return true;
 
+
 		// check if this is a TOC page.  If so, the navigation cache should 
 		// expire.
 		// Unfortunately, we can't do this on a per version basis, because 
@@ -2032,6 +2033,20 @@ HEREDOC;
 			}
 		}
 
+
+		if (preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . 'Products/', $title->__toString())) {
+			$products = PonyDocsProduct::GetDefinedProducts();
+			$dbr = wfGetDB(DB_SLAVE);
+			foreach ($products as $product) {
+				$sql = "SELECT * FROM user_groups WHERE ug_user = 1 AND ug_group = '{$product->getShortName()}-docteam'";
+				$res = $dbr->query($sql);
+				if ( !$res->numRows( ) ) {
+					$update_sql = "INSERT INTO user_groups (ug_user, ug_group) VALUES ('1', '{$product->getShortName()}-docteam')";
+					$dbr->query($update_sql);
+				}
+			}
+		}
+
 		return true;
 	}
 
@@ -2202,7 +2217,7 @@ HEREDOC;
 	static public function onBeforePageDisplay(&$out, &$sk) {
 		global $wgScriptPath;
 		// Add our js files
-		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/jquery-1.4.2.min.js");
+		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/jquery.js");
 		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/jquery.json-2.2.min.js");
 		$out->addScriptFile($wgScriptPath . "/extensions/PonyDocs/js/docs.js");
 		return true;
@@ -2342,6 +2357,38 @@ HEREDOC;
 		return $toUrl;
 	}
 
+	/**
+	 * Add tables and modifies existing tables for PonyDocs Extension
+	 *
+	 * @return boolean
+	 */
+	static public function LoadExtensionSchemaUpdates() {
+		global $wgExtNewTables, $wgExtModifiedFields;
+
+		$wgExtNewTables[] = array(
+			'ponydocs_doclinks',
+			dirname( __FILE__ ) . '/sql/ponydocs_doclinks.sql'
+		);
+
+		$wgExtNewTables[] = array(
+			'ponydocs_cache',
+			dirname( __FILE__ ) . '/sql/ponydocs_cache.sql'
+		);
+
+		$wgExtModifiedFields[] = array(
+			'user_groups',
+			'ug_group',
+			dirname( __FILE__ ) . '/sql/user_groups.patch.ug_group.sql'
+		);
+
+		$wgExtModifiedFields[] = array(
+			'user_groups',
+			'ug_group',
+			dirname(__FILE__) . '/sql/user_groups.insert.groups.sql'
+		);
+
+		return true;
+	}
 }
 
 /**

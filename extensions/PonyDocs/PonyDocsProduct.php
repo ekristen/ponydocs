@@ -121,8 +121,6 @@ class PonyDocsProduct
 	 */
 
 	static public function LoadProducts($reload = false) {
-		$dbr = wfGetDB(DB_SLAVE);
-
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */
@@ -133,7 +131,7 @@ class PonyDocsProduct
 		self::$sProductList = array();
 
 		// Use 0 as the last parameter to enforce getting latest revision of this article.
-		$article = new Article(Title::newFromText( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE), 0);
+		$article = new Article(Title::newFromText( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE ), 0);
 		$content = $article->getContent();
 
 		if( !$article->exists()) {
@@ -216,6 +214,71 @@ class PonyDocsProduct
 	{
 		self::LoadProducts( );
 		return self::$sDefinedProductList;
+	}
+
+	static public function GetDefinedProductsBySQL() {
+		global $IP;
+		require_once( "$IP/includes/GlobalFunctions.php" );
+
+		$dbr = wfGetDB(DB_SLAVE);
+		$sql = "SELECT
+					p.page_id, p.page_title, r.rev_text_id, t.old_id, t.old_text
+				FROM
+					page AS p
+				INNER JOIN
+					revision AS r
+					ON p.page_latest = r.rev_id
+				INNER JOIN
+					text AS t
+					ON r.rev_text_id = t.old_id
+				WHERE
+					p.page_namespace = 100
+					AND
+					p.page_title = 'Products'";
+		$res = $dbr->query($sql);
+		$row = $dbr->fetchObject ( $res );
+		$content = $row->old_text;
+
+			$tags = explode('}}', $content); // explode on the closing tag to get an array of products
+			foreach ($tags as $tag) {
+				$tag = trim($tag);
+				if (strpos($tag, '{{#product:') === 0) { 
+
+					// Remove the opening tag and prefix
+					$product = str_replace('{{#product:', '', $tag);   
+					$parameters = explode('|', $product);
+					$parameters = array_map('trim', $parameters);
+
+					// Set static flag if defined as static
+					$static = false;
+					if (strpos($parameters[0], PONYDOCS_PRODUCT_STATIC_PREFIX) === 0) {
+						$parameters[0] = substr($parameters[0], strlen(PONYDOCS_PRODUCT_STATIC_PREFIX));
+						$static = true;
+					}
+
+					// Allow admins to omit optional parameters
+					foreach (array(1, 2, 3) as $index) {
+						if (!array_key_exists($index, $parameters)) {
+							$parameters[$index] = '';
+						}
+					}
+
+					// Avoid wedging the product page with a fatal error if shortName 
+					// is omitted by some crazy nihilist
+					if (isset($parameters[0]) && $parameters[0] != '') {
+						$pProduct = new PonyDocsProduct($parameters[0], $parameters[1], $parameters[2], $parameters[3]);
+						$pProduct->setStatic($static);
+						$sDefinedProductList[$pProduct->getShortName()] = $pProduct;
+						$sProductList[$parameters[0]] = $pProduct;
+						if (isset($parameters[3]) && $parameters[3] != '') {
+							// key is parent, value is array of children
+							$sParentChildMap[$parameters[3]][] = $parameters[0];
+						}
+					}
+				}
+			}
+
+			return $sProductList;
 	}
 
 	/**

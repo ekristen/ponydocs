@@ -37,13 +37,26 @@ require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRecentProductChanges.php");
 require_once( "$IP/extensions/PonyDocs/SpecialStaticDocImport.php");
 
-// check for empty product list
-if (!isset ($ponyDocsProductsList) || sizeof($ponyDocsProductsList) == 0){
-	$ponyDocsProductsList[] = PONYDOCS_DEFAULT_PRODUCT;
+require_once( "$IP/extensions/PonyDocs/PonyDocsTemplate.php");
+
+
+$products = PonyDocsProduct::GetDefinedProductsBySQL();
+if (!empty($products)) {
+	foreach ($products as $shortName => $product) {
+		$ponyDocsProductsList[] = $shortName;
+	}
 }
+else {
+	$ponyDocsProductsList[] = 'Example';
+	//if ($_SERVER['REQUEST_URI'] != '/Documentation:Products&action=edit')
+	//	header('Location: http://wikidocs.dev/Documentation:Products&action=edit');
+}
+
 
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
+
+
 
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['read'] 			= true;
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['edit'] 			= true;
@@ -87,7 +100,6 @@ $editorPerms = array(
 );
 	
 foreach ($ponyDocsProductsList as $product){
-	
 	
 	// check for empty product
 	if ($product == ''){
@@ -223,12 +235,12 @@ function efManualParserFunction_Magic( &$magicWords, $langCode )
  * @param string $param2 Long/display name of manual.
  * @return array
  */
-function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' )
+function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' , $param3 = '')
 {
 	global $wgArticlePath, $wgUser, $wgScriptPath;
 
 	$valid = true;
-	if( !preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $param1 ) || !strlen( $param1 ) || !strlen( $param2 ))
+	if( !preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $param1 ) || !strlen( $param1 ) || !strlen( $param2 ) || !isset( $param3 ) )
 	{
 		return $parser->insertStripItem('', $parser->mStripState);
 	}
@@ -255,7 +267,7 @@ function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' )
 	else
 	{
 		$row = $dbr->fetchObject( $res );
-		$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">' . $param2 . "</a></p>\n";
+		$output = '<p><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">' . $param2 . "</a><div class=\"text-info\">". $param3 ."</div></p>\n";
 	}
 
 	return $parser->insertStripItem($output, $parser->mStripState);
@@ -374,7 +386,7 @@ function efProductParserFunction_Render(&$parser, $shortName = '', $longName = '
 	}
 	
 	if ($description != '') {
-		$output .= "<br>$description";
+		$output .= "$description";
 	}
 	
 	if ($parent != '') {
@@ -674,6 +686,9 @@ $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
 
 // Add version field to edit form
 $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';
+
+// Have the extension do the database upgrades
+$wgHooks['LoadExtensionSchemaUpdates'][] = 'PonyDocsExtension::LoadExtensionSchemaUpdates';
 
 /**
  * End of file.
