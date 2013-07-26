@@ -1,5 +1,14 @@
 <?php
 
+/**
+ * PonyDocs Extension Configuration
+ * 
+ * You really should not need to edit anything here!
+ * 
+ * Seriously!
+ * 
+ * 
+ */
 
 // Define your user groups here
 define('PONYDOCS_EMPLOYEE_GROUP', 'employees');
@@ -7,10 +16,11 @@ define('PONYDOCS_BASE_AUTHOR_GROUP', 'docteam');
 define('PONYDOCS_BASE_PREVIEW_GROUP', 'preview');
 define('PONYDOCS_CRAWLER_AGENT_REGEX', '/gsa-crawler/');
 
+// Define Namespace information
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation');
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_ID', 100);
 
-define('PONYDOCS_CACHE_ENABLED', true);
+define('PONYDOCS_CACHE_ENABLED', false);
 define('PONYDOCS_CACHE_DEBUG', false);
 define('PONYDOCS_REDIRECT_DEBUG', false);
 define('PONYDOCS_SESSION_DEBUG', false);
@@ -37,12 +47,13 @@ define('PONYDOCS_PRODUCTMANUAL_TITLE_REGEX', '/^' . PONYDOCS_DOCUMENTATION_PREFI
 
 // category cache expiration in seconds
 define('CATEGORY_CACHE_TTL', 300);
-
-// directories
 define('PONYDOCS_TEMP_DIR', '/tmp/');
+
+// Static Documentation
 define('PONYDOCS_STATIC_DIR', '/var/www/useruploads/docs/staticDocs');
 define('PONYDOCS_STATIC_PATH', 'DocumentationStatic');
 define('PONYDOCS_STATIC_URI', '/' . PONYDOCS_STATIC_PATH . '/');
+
 // specify URI to CSS file to dynamically override static documentation iframe CSS
 define('PONYDOCS_STATIC_CSS', '');
 
@@ -50,6 +61,13 @@ define('PONYDOCS_STATIC_CSS', '');
 define('PONYDOCS_CASE_SENSITIVE_TITLES', false);
 
 // pdf output constants
-define('PONYDOCS_WKHTMLTOPDF_PATH', dirname(__FILE__) . '/bin/wkhtmltopdf');
+$uname = php_uname();
+if (preg_match('/Darwin/i', $uname) && preg_match('/x86_64/i', $uname))
+	$wkhtmlbin = 'wkhtmltopdf-osx64';
+else if (preg_match('/x86_64/i', $uname))
+	$wkhtmlbin = 'wkhtmltopdf-amd64';
+else
+	$wkhtmlbin = 'wkhtmltopdf-i386';
 
-?>
+define('PONYDOCS_WKHTMLTOPDF_PATH', dirname(__FILE__) . "/bin/{$wkhtmlbin}");
+
