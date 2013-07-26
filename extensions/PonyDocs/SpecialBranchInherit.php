@@ -518,7 +518,7 @@ class SpecialBranchInherit extends SpecialPage
 				?>
 			</select>
 			<p>
-			<input type="button" id="versionselect_submit" value="Continue to Manuals" />
+			<input type="button" id="versionselect_submit" class="btn btn-primary" value="Continue to Manuals" />
 			</p>
 		</div>
 
@@ -535,16 +535,25 @@ class SpecialBranchInherit extends SpecialPage
 			<p class="summary">
 				<strong>Source Version:</strong> <span class="sourceversion"></span> <strong>Target Version:</strong> <span class="targetversion"></span>
 			</p>
-			<h1>Choose Manuals To Branch/Inherit From</h1>	
+			<h2>Choose Manuals To Branch/Inherit From</h2>	
 			<div id="manualselect_manuals">
 
 			</div>
-			<h1>Choose Default Action For Topics</h1>
-			<input type="radio" selected="selected" name="manualselect_action" value="ignore" id="manualselect_action_ignore"><label for="manualselect_action_ignore">Ignore - Do Nothing</label><br />
-			<input type="radio" name="manualselect_action" value="inherit" id="manualselect_action_inherit"><label for="manualselect_action_inherit">Inherit - Add Target Version to Existing Topic</label><br />
-			<input type="radio" name="manualselect_action" value="branch" id="manualselect_action_branch"><label for="manualselect_action_branch">Branch - Create a copy of existing topic with Target Version</label><br />
+			<h2>Choose Default Action For Topics</h2>
+			<label class="radio" for="manualselect_action_ignore">
+				<input type="radio" selected="selected" name="manualselect_action" value="ignore" id="manualselect_action_ignore" />
+				Ignore - Do Nothing
+			</label>
+			<label class="radio" for="manualselect_action_inherit">
+				<input type="radio" name="manualselect_action" value="inherit" id="manualselect_action_inherit" />
+				Inherit - Add Target Version to Existing Topic
+			</label>
+			<label class="radio" for="manualselect_action_branch">
+				<input type="radio" name="manualselect_action" value="branch" id="manualselect_action_branch" />
+				Branch - Create a copy of existing topic with Target Version
+			</label>
 			<br />
-			<input type="button" id="manualselect_submit" value="Continue to Topics" />
+			<input type="button" id="manualselect_submit" class="btn btn-primary" value="Continue to Topics" />
 		</div>
 		<div class="topicactions" style="display: none;">
 			<?php
@@ -561,11 +570,11 @@ class SpecialBranchInherit extends SpecialPage
 			</p>
 
 			<h1>Specify Topic Actions</h1>
-			<div class="container">
+			<div class="branchcontainer">
 			</div>
 			<br />
 			<br />
-			<input type="button" id="topicactions_submit" value="Process Request" />
+			<input type="button" id="topicactions_submit" value="Process Request" class="btn btn-primary" />
 			<div id="progressconsole"></div>
 		</div>
 		<div class="completed" style="display: none;">
