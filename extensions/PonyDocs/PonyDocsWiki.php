@@ -94,7 +94,7 @@ class PonyDocsWiki
 	 * @param PonyDocsTopic $pTopic Topic to obtain versions for.
 	 * @return array
 	 */
-	public function getVersionsForTopic( PonyDocsTopic &$pTopic )
+	static public function getVersionsForTopic( PonyDocsTopic &$pTopic )
 	{
 		global $wgArticlePath;
 		$versions = $pTopic->getProductVersions( );
