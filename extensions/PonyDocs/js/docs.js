@@ -63,7 +63,7 @@ SplunkBranchInherit = function() {
 								var container = $('#manualselect_manuals');
 								container.html('');
 								for(index in manuals) {
-									var html = "<input id=\"manual_" + manuals[index]['shortname'] + "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[index]['shortname'] + "\" /><label for=\"manual_" + manuals[index]['shortname'] + "\">" + manuals[index]['longname'] + "</label><br />";
+									var html = "<label class=\"checkbox\" for=\"manual_" + manuals[index]['shortname'] + "\"><input id=\"manual_" + manuals[index]['shortname'] + "\" type=\"checkbox\" name=\"manual\" value=\"" + manuals[index]['shortname'] + "\" />" + manuals[index]['longname'] + "</label>";
 									container.prepend(html);
 								}
 								$('#docbranchinherit .versionselect').fadeOut(function () {
@@ -78,7 +78,9 @@ SplunkBranchInherit = function() {
 						}
 					}
 				});
-				$('.sectiondefault').live("change", function(event) {
+/*
+				$('.sectiondefault').change(function() {
+				    console.log('changed');
 					var val = $(this).val();
 					$(this).siblings("table").find("option[value='" + val + "']").attr("selected", "selected");
 					if(val == "inherit") {
@@ -87,7 +89,9 @@ SplunkBranchInherit = function() {
 					if(val == "branch") {
 						$(this).siblings("table").find("option[value='branchsplit']").attr("selected", "selected");
 					}
+
 				});
+*/
 				$('#manualselect_submit').click(function() {
 					manuals = [];
 					if($('#manualselect_manuals input:checked').length == 0) {
@@ -112,7 +116,7 @@ SplunkBranchInherit = function() {
 						}
 						$('#topicactions_submit').attr("value", "Processing...").attr("disabled", "disabled");
 						// Time to build topic actions
-						$('#docbranchinherit .topicactions .container .manual').each(function() {
+						$('#docbranchinherit .topicactions .branchcontainer .manual').each(function() {
 							var manualName = $(this).find('.manual_shortname').val();
 							var tocAction = $(this).find('.manualtocaction').val();
 							topicActions[manualName] = {};
@@ -157,17 +161,17 @@ SplunkBranchInherit = function() {
 				});
 			},
 			setupTopicActions: function(res) {
-				var container = $('.topicactions .container');
+				var container = $('.topicactions .branchcontainer');
 				var topicData = eval('(' + res.responseText + ')');
 				var html = '';
 				for(manual in topicData) {
 					html += '<div class="manual"><h2>' + topicData[manual].meta.text + '</h2>';
 					html += '<input type="hidden" class="manual_shortname" value="' + manual + '" />';
 					if(topicData[manual].meta.toc_exists != false && topicData[manual].meta.toc_exists != '') {
-						html += '<p>A Table Of Contents already exists for this manual.  Topics processed below will be added only if they do not exist in the TOC.</p><input class="manualtocaction" type="hidden" value="default"/>';
+						html += '<p class="alert alert-danger">A Table Of Contents already exists for this manual.  Topics processed below will be added only if they do not exist in the TOC.</p><input class="manualtocaction" type="hidden" value="default"/>';
 
 					} else {
-						html += '<p>A Table Of Contents does not exist for this manual.  Choose creation behavior: <select class="manualtocaction">';
+						html += '<p class="alert alert-info">A Table Of Contents does not exist for this manual.  Choose creation behavior: <select class="manualtocaction">';
 
 						if(defaultAction == 'inherit') {
 							html += '<option value="forceinherit" selected="selected">Force Inherit</option>';
@@ -203,7 +207,7 @@ SplunkBranchInherit = function() {
 									html += '<option value="inherit">Inherit</option>';
 								}
 
-						html += '</select><table class="topiclist"><thead><td class="title"><strong>Title</strong></td><td class="conflicts"><strong>Conflicts</strong></td><td class="actions"><strong>Action</strong></td></thead>';
+						html += '</select><table class="table table-bordered table-stripped topiclist"><thead><td class="title"><strong>Title</strong></td><td class="conflicts"><strong>Conflicts</strong></td><td class="actions"><strong>Action</strong></td></thead>';
 						for(topic in topicData[manual].sections[section].topics) {
 							var el = topicData[manual].sections[section].topics[topic];
 							html += '<tr><td class="topicname"><strong>' + el['text'] + '</strong><br /><em>' + el['title'] + '</em></td><td class="conflicts">' + el['conflicts'] + '</td><td class="action"><select name="action">';
@@ -259,6 +263,20 @@ SplunkBranchInherit = function() {
 				$('#docbranchinherit .manualselect, #docbranchinherit .versionselect').fadeOut(function() {
 					$('#manualselect_submit').attr("value", "Continue to Topics").removeAttr("disabled");
 					$('#docbranchinherit .topicactions').fadeIn();
+				});
+				
+				$('.sectiondefault').change(function() {
+					var val = $(this).val();
+					$(this).siblings("table").find("option").removeAttr("selected");
+					$(this).siblings("table").find("option[value='" + val + "']").attr("selected", "selected");
+                    $(this).siblings("table").find("select").val(val);
+					if(val == "inherit") {
+						$(this).siblings("table").find("option[value='inheritpurge']").attr("selected", "selected");
+					}
+					if(val == "branch") {
+						$(this).siblings("table").find("option[value='branchsplit']").attr("selected", "selected");
+					}
+
 				});
 			},
 			fetchProgress: function() {
