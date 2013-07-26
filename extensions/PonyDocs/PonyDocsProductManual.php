@@ -49,12 +49,13 @@ class PonyDocsProductManual
 	 * @param string $shortName Short name used to refernce manual in URLs.
 	 * @param string $longName Display name for manual.
 	 */
-	public function __construct( $pName, $shortName, $longName = '' )
+	public function __construct( $pName, $shortName, $longName = '', $description = '' )
 	{
 		//$this->mShortName = strtolower( $shortName );
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
+		$this->mDescription = strlen( $description ) ? $description : '';
 	}
 
 	public function getShortName( )
@@ -70,6 +71,11 @@ class PonyDocsProductManual
 	public function getProductName( )
 	{
 		return $this->pName;
+	}
+	
+	public function getDescription()
+	{
+		return $this->mDescription;
 	}
 
 	/**
@@ -116,12 +122,12 @@ class PonyDocsProductManual
 		 * Otherwise, skip it!
 		 */
 
-		if( !preg_match_all( '/{{#manual:\s*(.*)[|](.*)\s*}}/i', $content, $matches, PREG_SET_ORDER ))
+		if( !preg_match_all( '/{{#manual:\s*(.*)[|](.*)[|](.*)\s*}}/i', $content, $matches, PREG_SET_ORDER ))
 			return array( );
 
 		foreach( $matches as $m )
 		{
-			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2] );
+			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2], $m[3] );
 			self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
 
 			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));

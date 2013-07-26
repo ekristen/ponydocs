@@ -465,7 +465,9 @@ class PonyDocsProductVersion
 	{
 		if($asMap)
 			return self::$sVersionMapReleased[$productName];
-		return self::$sVersionListReleased[$productName];
+		if (sizeof(self::$sVersionListReleased[$productName]))
+			return self::$sVersionListReleased[$productName];
+		return array();
 	}
 
 	/**
@@ -487,7 +489,9 @@ class PonyDocsProductVersion
 	 */
 	static public function & GetPreviewVersions( $productName )
 	{
-		return self::$sVersionListPreview[$productName];
+		if ( sizeof(self::$sVersionListPreview[$productName]) )
+			return self::$sVersionListPreview[$productName];
+		return array();
 	}
 
 	static public function & GetLatestVersion( $productName )
@@ -516,6 +520,17 @@ class PonyDocsProductVersion
 	{
 		if( sizeof( self::$sVersionListPreview[$productName] ))
 			return self::$sVersionListPreview[$productName][sizeof( self::$sVersionListPreview[$productName] )-1];
+		return null;
+	}
+
+
+	static public function & GetLatestVersionForUser( $productName )
+	{
+		$sVersionListForUser = self::GetVersionsForUser( 'EMP' );
+
+		if ( sizeof ($sVersionListForUser))
+			return array_pop($sVersionListForUser);
+
 		return null;
 	}
 
