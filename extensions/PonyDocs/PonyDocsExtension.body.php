@@ -2035,9 +2035,7 @@ HEREDOC;
 
 
 		if (preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . 'Products/', $title->__toString())) {
-			// Force reload of products, instead of using the cache.
-			PonyDocsProduct::LoadProducts(true);
-			$products = PonyDocsProduct::GetDefinedProducts();
+			$products = PonyDocsProduct::GetDefinedProductsBySQL();
 			$dbr = wfGetDB(DB_SLAVE);
 			foreach ($products as $product) {
 				$sql = "SELECT * FROM user_groups WHERE ug_user = 1 AND ug_group = '{$product->getShortName()}-docteam'";

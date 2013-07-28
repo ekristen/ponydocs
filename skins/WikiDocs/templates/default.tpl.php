@@ -90,9 +90,6 @@
 				<?php print $this->htmlContentActions(); ?>
 
 				<div class="tab-content">
-					<?php if (!$this->inDocumentation): ?>
-					<h1 id="firstHeading" class="firstHeading"><?php $this->html('title'); ?></h1>
-					<?php endif; ?>
 
 					<div class="content" id="content">
 						<?php $this->html('bodytext') ?>
