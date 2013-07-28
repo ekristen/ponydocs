@@ -51,12 +51,6 @@ else {
 	// Due to some logic in PonyDocs, there has to be a single product defined. So until
 	// the admin defines a product, we will populate a bogus one so everything works.
 	$ponyDocsProductsList[] = 'Example';
-
-	// Redirect to the Edit Products Page
-	if (!isset($_REQUEST['initial']) && $_REQUEST['title'] != 'Documentation:Products') {
-		header("Location: http://wikidocs.dev/index.php?title=Documentation:Products&action=edit&initial=true");
-		exit;
-	}
 }
 
 // append empty group for backwards compabability with "docteam" and "preview" groups
