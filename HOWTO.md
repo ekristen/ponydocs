@@ -20,9 +20,11 @@
 	* Child products will be displayed under their parents in product listings.
 * Here's an example of a page with the three products above:
 
+	```
 	{{#product:Foo|Foo for fooing|Foo is the synergy of three popular domain-specific languages|}}
 	{{#product:Bar|Bar for the bar|You've never seen a Bar like this before|}}
 	{{#product:Bash|Bash is not Quux|Bash is a Quux-like framework for rapid prototyping|Bar}}
+	```
 
 * Only productShortName is required. displayName will default to shortName if left empty. 
 * Please do include all the pipes if you are leaving some variables empty: `{{#product:Quux|||}}`
