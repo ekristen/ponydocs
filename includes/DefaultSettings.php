@@ -33,7 +33,7 @@ if ( !defined( 'MW_PHP4' ) ) {
 }
 
 /** MediaWiki version number */
-$wgVersion = '1.16.4';
+$wgVersion = '1.0 Beta RC1';
 
 /** Name of the site. It must be changed in LocalSettings.php */
 $wgSitename         = 'WikiDocs';
