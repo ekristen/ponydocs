@@ -195,7 +195,7 @@ EOL;
 		}
 		else {
 			$output[] = '<li class="dropdown-submenu">';
-			$output[] = '<a href="#">' . $menu['label'] . '</a>';
+			$output[] = '<a href="#" class="'.$menu['class'].'">' . $menu['label'] . '</a>';
 			$output[] = '<ul class="dropdown-menu">';
 		}
 
@@ -205,7 +205,7 @@ EOL;
 			}
 			else if (isset($item['url'])) {
 				// URL
-				$output[] = ' <li><a href="'. $item['url'] . '">' . $item['label'] . '</a></li>';
+				$output[] = ' <li><a href="'. $item['url'] . '" class="'.$item['class'].'">' . $item['label'] . '</a></li>';
 			}
 			else {
 				// Nav Header
@@ -490,15 +490,22 @@ EOL;
 EOL;
 		}
 
-		$output_items = implode("\n", $items);
-
-		$output =<<<EOL
-			<div class="productlist">
-				<ul class="thumbnails">
-					{$output_items}
-				</ul>
-			</div>
+		if (empty($items) && $this->isAdmin()) {
+			$output =<<<EOL
+			<div class="alert alert-warning">You do not have any products with versions defined. Once you define at least one product plus a version, you will see it populate here.</div>
 EOL;
+		} else {
+
+			$output_items = implode("\n", $items);
+
+			$output =<<<EOL
+				<div class="productlist">
+					<ul class="thumbnails">
+						{$output_items}
+					</ul>
+				</div>
+EOL;
+		}
 
 		return $output;
 	} // end function htmlProducts
@@ -584,5 +591,24 @@ EOL;
 EOL;
 	} // end function htmlFooterLinks
 
+
+	function phpErrors() {
+		global $wgErrors;
+
+		$items = array();
+
+		foreach ($wgErrors as $error) {
+			$items[$errno][] = '<li>'.$error['error'].' ['.$errno.']</li>';
+		}
+
+		$output = '';
+
+		$output =<<<EOL
+<div class="alert alert-danger">
+	<ul>
+</div>
+EOL;
+
+	}
 
 }

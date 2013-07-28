@@ -75,3 +75,6 @@ a {
     min-height: 140px;
 }
 
+#editpage-copywarn {
+    display: none;
+}

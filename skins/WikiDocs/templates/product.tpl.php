@@ -79,6 +79,8 @@
 <div class="container"> 
 	<?php print $this->generateBreadcrumbMenu(); ?>
 
+	<?php print $this->phpErrors(); ?>
+
 	<div class="row">
 		<div class="span12">
 			<?php print $this->htmlProductManuals(); ?>
@@ -93,6 +95,7 @@
 </div> <!-- end div#footer -->
 
 <script type="text/javascript" src="/skins/WikiDocs/bootstrap/js/bootstrap.js"></script>
+<script type="text/javascript" src="/skins/WikiDocs/sauce.js"></script>
 
 <?php $this->html('bottomscripts'); /* JS call to runBodyOnloadHook */ ?>
 <?php $this->html('reporttime') ?>
