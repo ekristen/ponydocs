@@ -30,7 +30,7 @@
 * Don't forget to add corresponding elements to the `$ponyDocsProductsList` array in LocalSettings.php, as
   documented in Step 5 above.
 
-# Create your first product version.
+## Create your first product version.
 
 1. Logged in as your administrator user, visit the Documentation:productShortName:Versions page. (you can do this via the Admin Menu)
 	* productShortName is the shortName of one of the products defined above
@@ -38,7 +38,7 @@
 	  /Documentation:productShortName:Versions.
 2. Click on the "Create" tab at the top of the page to edit the page and add new versions.
 
-## The Documentation:productShortName:Versions page contains a listing of all versions of a product and their status
+### The Documentation:productShortName:Versions page contains a listing of all versions of a product and their status
 
 * The status can be "released", "unreleased" or "preview".
 * For regular users, only "released" versions can be seen.
@@ -60,7 +60,7 @@
 1. Now head to /Documentation:productShortName:Manuals. (do this via the Admin Menu)
 2. Click on the "Create" tab at the top of the page to edit the page and add new manuals.
 
-## The Documentation:productShortName:Manuals page defines the Manuals available for a product version.
+### The Documentation:productShortName:Manuals page defines the Manuals available for a product version.
 
 * A version can have all the manuals, or a sub-set of the manuals you define here.
 * You'll create the links of the manuals to your first version in the next step.
@@ -82,7 +82,7 @@
   created in Documentation:productShortName:Versions).
 * By clicking on the Manual name, you'll proceed to the next step. 
 
-# Create your first Table of Contents (TOC) and auto-generate your first topic.
+## Create your first Table of Contents (TOC) and auto-generate your first topic.
 
 Admin Menu > PRODUCT > VERSION > Manage Table of Contents (for a Manual)
 
@@ -111,7 +111,7 @@ Admin Menu > PRODUCT > VERSION > Manage Table of Contents (for a Manual)
 * Clicking on the topic in the TOC page will take you to the new topic, which you'll be able to edit with your new content.
 * Note that each new topic page is also auto-populated with a category tag (or tags).
 
-# wkhtmltopdf
+## wkhtmltopdf
 
 This is already packaged with the product, but if you are having problems refer to the rest of this section.
 
