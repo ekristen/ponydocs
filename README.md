@@ -1,10 +1,28 @@
-PonyDocs
-========
+WikiDocs (powered by PonyDocs)
+==============================
 
-A MediaWiki module for software documentation
----------------------------------------------
+A MediaWiki distribution for software documentation
+---------------------------------------------------
+
+Introduction
+------------
+This was originally forked from splunk/PonyDocs, unfortunately the installation of PonyDocs wasn't straight forward
+and if you missed any step in the installation steps, you'll have a non-working PonyDocs setup. My goal was to make it 
+easy as installing MediaWiki to get going. So I have packaged MediaWiki with this repo and I have altered the install process
+to ensure that not only MediaWiki and PonyDocs gets installed properly.
 
 PonyDocs is the software that powers Splunk's documentation site, [docs.splunk.com](http://docs.splunk.com).
+
+WikiDocs Features
+-----------------
+These features are currently only available to those who use WikiDocs, they have not been pulled back into PonyDocs.
+
+* **Fully Working Theme** Bootstrap 2.3.2 inspired theme with a fully functional user interface.
+* **Administration Menu in Theme** Dynamically created Admin menu for making management of the UI simple.
+* **Automatic Permissions** Anyone with the docteam group will automatically get any new products docteam group.
+* **Theme Templates** Most of the theming has been abstracted into separates classes and templates.
+* **Compatibility with PHP 5.4** 
+
 
 MediaWiki Features
 ------------------
