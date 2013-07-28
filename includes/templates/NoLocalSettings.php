@@ -54,15 +54,13 @@ foreach( $topdirs as $dir ){
 		</style>
 	</head>
 	<body>
-		<img src="<?php echo htmlspecialchars( $path ) ?>skins/common/images/mediawiki.png" alt='The MediaWiki logo' />
-
-		<h1>MediaWiki <?php echo htmlspecialchars( $wgVersion ) ?></h1>
+		<h1>WikiDocs <?php echo htmlspecialchars( $wgVersion ) ?></h1>
 		<div class='error'>
 		<?php
 		if ( file_exists( 'config/LocalSettings.php' ) ) {
 			echo( 'To complete the installation, move <tt>config/LocalSettings.php</tt> to the parent directory.' );
 		} else {
-			echo( "Please <a href=\"" . htmlspecialchars( $path ) . "config/index." . htmlspecialchars( $ext ) . "\" title='setup'> set up the wiki</a> first." );
+			echo( "Please <a href=\"" . htmlspecialchars( $path ) . "config/index." . htmlspecialchars( $ext ) . "\" title='setup'> set up the WikiDocs</a> first." );
 		}
 		?>
 
