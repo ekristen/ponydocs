@@ -36,9 +36,9 @@ require_once( "$IP/extensions/PonyDocs/SpecialBranchInherit.php");
 require_once( "$IP/extensions/PonyDocs/SpecialDocListing.php");
 require_once( "$IP/extensions/PonyDocs/SpecialRecentProductChanges.php");
 require_once( "$IP/extensions/PonyDocs/SpecialStaticDocImport.php");
-
 require_once( "$IP/extensions/PonyDocs/PonyDocsTemplate.php");
 
+$wgErrors = array();
 
 $products = PonyDocsProduct::GetDefinedProductsBySQL();
 if (!empty($products)) {
@@ -47,15 +47,20 @@ if (!empty($products)) {
 	}
 }
 else {
+	// FIX: Remove this (HACK)
+	// Due to some logic in PonyDocs, there has to be a single product defined. So until
+	// the admin defines a product, we will populate a bogus one so everything works.
 	$ponyDocsProductsList[] = 'Example';
-	//if ($_SERVER['REQUEST_URI'] != '/Documentation:Products&action=edit')
-	//	header('Location: http://wikidocs.dev/Documentation:Products&action=edit');
-}
 
+	// Redirect to the Edit Products Page
+	if (!isset($_REQUEST['initial']) && $_REQUEST['title'] != 'Documentation:Products') {
+		header("Location: http://wikidocs.dev/index.php?title=Documentation:Products&action=edit&initial=true");
+		exit;
+	}
+}
 
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
-
 
 
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['read'] 			= true;
@@ -643,6 +648,22 @@ function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' )
 	
 	return '<h3>Manual Description: </h3><h4>' . $param1 . '</h4>'; // Return formated output
 }
+
+function PonyDocsErrorHandler($errno, $errstr, $errfile, $errline) {
+	global $wgErrors;
+
+	if (!(error_reporting() & $errno)) {
+		// This error code is not included in error_reporting
+		return;
+	}
+
+	$wgErrors[] = array('id' => $errno, 'error' => $errstr, 'file' => $errfile, 'line' => $errline);
+
+	return true;
+}
+
+set_error_handler("PonyDocsErrorHandler");
+
 
 /**
  * Setup our 'hooks' here.  We do this by assigning function names to the $wgHooks array.  THe key of this array

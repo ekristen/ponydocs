@@ -503,7 +503,7 @@ class PonyDocsProductVersion
 
 	static public function & GetLatestReleasedVersion( $productName )
 	{
-		if( sizeof( self::$sVersionListReleased[$productName] )) {
+		if( isset(self::$sVersionListReleased[$productName]) ) {
 			return self::$sVersionListReleased[$productName][sizeof( self::$sVersionListReleased[$productName] )-1];
 		}
 		return null;

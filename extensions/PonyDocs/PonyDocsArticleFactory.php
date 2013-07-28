@@ -70,7 +70,7 @@ class PonyDocsArticleFactory
 		$meta = self::getArticleMetadataFromURL($title, $baseUrl);
 		$titleToLoad = $meta['namespace'] . ':' . $meta['product'] . ':' . $meta['version'] . ':' . $meta['uri'];
 		$article = new PonyDocsArticleStatic(Title::newFromText($titleToLoad), 0);
-		$article->setMetadata($meta['product'], $meta['version'], $meta['uri']);
+		$article->setMetadata(array('product' => $meta['product'], 'version' => $meta['version'], 'uri' => $meta['uri']));
 		return $article;
 	}
 

@@ -35,7 +35,7 @@ class SpecialTopicList extends SpecialPage
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.  If passed a topic
 	 * as 'topic' it lists all pages for that topic;  else it displays EVERYTHING for the selected version?
 	 */
-	public function execute( )
+	public function execute( $par )
 	{
 		global $wgOut, $wgArticlePath, $wgRequest;
 

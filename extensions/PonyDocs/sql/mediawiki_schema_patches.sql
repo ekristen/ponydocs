@@ -1,0 +1,1 @@
+ALTER TABLE `user_groups` CHANGE `ug_group` `ug_group` VARBINARY(64)  NOT NULL  DEFAULT '';

@@ -220,6 +220,8 @@ class PonyDocsProduct
 		global $IP;
 		require_once( "$IP/includes/GlobalFunctions.php" );
 
+		$sProductList = array();
+
 		$dbr = wfGetDB(DB_SLAVE);
 		$sql = "SELECT
 					p.page_id, p.page_title, r.rev_text_id, t.old_id, t.old_text
@@ -236,8 +238,10 @@ class PonyDocsProduct
 					AND
 					p.page_title = 'Products'";
 		$res = $dbr->query($sql);
-		$row = $dbr->fetchObject ( $res );
-		$content = $row->old_text;
+
+		if ($res->numRows()) {
+			$row = $dbr->fetchObject ( $res );
+			$content = $row->old_text;
 
 			$tags = explode('}}', $content); // explode on the closing tag to get an array of products
 			foreach ($tags as $tag) {
@@ -278,7 +282,9 @@ class PonyDocsProduct
 				}
 			}
 
-			return $sProductList;
+		}
+
+		return $sProductList;
 	}
 
 	/**

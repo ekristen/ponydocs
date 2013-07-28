@@ -33,7 +33,7 @@ class SpecialDocumentLinks extends SpecialPage {
 	 * This is called upon loading the special page.  It should write output to 
 	 * the page with $wgOut
 	 */
-	public function execute() {
+	public function execute( $par ) {
 		global $wgOut, $wgArticlePath, $wgScriptPath, $wgUser;
 		global $wgRequest;
 		global $wgDBprefix;

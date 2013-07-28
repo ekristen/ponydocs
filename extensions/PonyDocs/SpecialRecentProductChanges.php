@@ -65,7 +65,7 @@ class SpecialRecentProductChanges extends SpecialRecentChanges {
 		return $opts;
 	}
 	
-	public function outputHeader()
+	public function outputHeader( $summaryMessageKey = '' )
 	{
 		global $wgOut, $wgContLang;
 		

@@ -33,9 +33,7 @@ class PonyDocsTemplate extends QuickTemplate {
 	 * This sets up our PonyDocs Template
 	 * 
 	 */
-	function __construct() {
-		parent::__construct();
-
+	function preSetup() {
 		global $wgUser, $wgExtraNamespaces, $wgTitle, $wgArticlePath, $IP;
 		global $wgRequest, $wgRevision, $action, $wgRequest, $wgSitename;
 
@@ -64,7 +62,8 @@ class PonyDocsTemplate extends QuickTemplate {
 		$this->data['namespaces'] = $wgExtraNamespaces;
 		$this->data['selectedVersion'] = PonyDocsProductVersion::GetSelectedVersion( $this->data['selectedProduct'] );
 		$this->data['pVersion'] = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion']);
-		$this->data['versionurl'] = $this->data['wgScript'] . '?title=' . $this->data['thispage'] . '&action=changeversion';
+		// TODO: FIX -- Disabled due to wgScript and thispage not being set?
+		//$this->data['versionurl'] = $this->data['wgScript'] . '?title=' . $this->data['thispage'] . '&action=changeversion';
 
 		if (PONYDOCS_SESSION_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . "] selected product/version is set to " . $this->data['selectedProduct'] . "/" . $this->data['selectedVersion']);
@@ -93,6 +92,8 @@ class PonyDocsTemplate extends QuickTemplate {
 	 * from the QuickTemplate OutputPage function.
 	 */
 	function execute() {
+		$this->preSetup();
+
 		$this->skin = $skin = $this->data['skin'];
 
 		if($this->skin->mTitle) {
@@ -211,7 +212,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				$wgOut->prependHTML('<strong>Instructions</strong>');
 				$wgOut->prependHTML('<div class="alert alert-success">');
 			}
-			else if( preg_match( '/(.*)TOC(.*)/', $pieces[2], $matches ))
+			else if (isset($pieces[2]) && preg_match( '/(.*)TOC(.*)/', $pieces[2], $matches ))
 			{
 				$this->data['titletext'] = $matches[1] . ' Table of Contents Page';
 				$this->data['headertext'] = $this->data['titletext'];
@@ -222,7 +223,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				$wgOut->prependHTML( '<strong>Instructions</strong>' );
 				$wgOut->prependHTML( '<div class="alert alert-success">');
 			}
-			else if( sizeof( $pieces ) >= 2 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ))
+			else if ( count( $pieces ) >= 3 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ))
 			{
 				$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
 				if( $pManual )
@@ -241,8 +242,8 @@ class PonyDocsTemplate extends QuickTemplate {
 					$this->data['headertext'] = $product->getLongName() . ' <small>Manuals</small>';
 				}
 				else {
-					$this->data['topicname'] = $pieces[2];
-					$this->data['headertext'] = $pieces[2];
+					$this->data['topicname'] = $pieces[0];
+					$this->data['headertext'] = $pieces[0];
 				}
 			}
 		}
@@ -489,27 +490,36 @@ class PonyDocsTemplate extends QuickTemplate {
 			)
 		);
 
-		foreach (PonyDocsProduct::getDefinedProducts() as $product) {
-			$subitems = array(
-				array('label' => 'Product Admin'),
-				array('label' => 'Manage Versions', 'url' => '/Documentation:'.$product->getShortName().':Versions'),
-				array('label' => 'Manage Manuals', 'url' => '/Documentation:'.$product->getShortName().':Manuals'),
-				array('label' => 'Product Versions'),
-			);
+		$products = PonyDocsProduct::getDefinedProducts();
+		if (!empty($products)) {
+			foreach (PonyDocsProduct::getDefinedProducts() as $product) {
+				$subitems = array(
+					array('label' => 'Product Admin'),
+					array('label' => 'Manage Versions', 'url' => '/Documentation:'.$product->getShortName().':Versions'),
+					array('label' => 'Manage Manuals', 'url' => '/Documentation:'.$product->getShortName().':Manuals'),
+					array('label' => 'Product Versions'),
+				);
 
-			foreach (PonyDocsProductVersion::GetVersions($product->getShortName()) as $version) {
-				$subsubitems = array();
+				foreach (PonyDocsProductVersion::GetVersions($product->getShortName()) as $version) {
+					$subsubitems = array();
 
-				foreach (PonyDocsProductManual::getDefinedManuals($product->getShortName()) as $manual) {
-					$subsubitems[] = array('label' => $manual->getLongName());
-					$subsubitems[] = array('label' => 'Manage Table of Contents', 'url' => '/Documentation:'.$product->getShortName().':'.$manual->getShortName().'TOC'.$version->getVersionName());
+					$manuals = PonyDocsProductManual::getDefinedManuals($product->getShortName());
+					if (isset($manuals) && !empty($manuals)) {
+						foreach (PonyDocsProductManual::getDefinedManuals($product->getShortName()) as $manual) {
+							$subsubitems[] = array('label' => $manual->getLongName());
+							$subsubitems[] = array('label' => 'Manage Table of Contents', 'url' => '/Documentation:'.$product->getShortName().':'.$manual->getShortName().'TOC'.$version->getVersionName());
+						}
+					}
+
+					$subitems[] = array('label' => $version->getVersionName(), 'items' => $subsubitems, 'url' => '#');
 				}
 
-				$subitems[] = array('label' => $version->getVersionName(), 'items' => $subsubitems, 'url' => '#');
+
+				$menu['items'][] = array('label' => $product->getLongName(), 'url' => '#', 'items' => $subitems);
 			}
-
-
-			$menu['items'][] = array('label' => $product->getLongName(), 'url' => '#', 'items' => $subitems);
+		}
+		else {
+			$menu['items'][] = array('label' => 'No Products Defined', 'url' => '#', 'class' => 'disabled');
 		}
 
 		$menu['items'][] = array('label' => 'Site Admin');

@@ -22,10 +22,10 @@ class PonyDocsArticleStatic extends PonyDocsArticle
 	 * @param string $version Ponydocs version name
 	 * @param string $uri static content URI requested (string after product/version)
 	 */
-	public function setMetadata($product, $version, $uri) {
-		$this->product = $product;
-		$this->version = $version;
-		$this->uri = $uri;
+	public function setMetadata($metadata) {
+		$this->product = $metadata['product'];
+		$this->version = $metadata['version'];
+		$this->uri = $metadata['uri'];
 	}
 
 	/**

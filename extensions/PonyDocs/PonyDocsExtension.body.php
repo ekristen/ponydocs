@@ -1834,13 +1834,13 @@ HEREDOC;
 	 * the first article in a manual for the user's version.  If so, try and 
 	 * find the first article and redirect.
 	 */
-	public function onArticleFromTitleQuickLookup(&$title, &$article) {
+	static public function onArticleFromTitleQuickLookup(&$title, &$article) {
 		global $wgScriptPath;
 		if(preg_match('/&action=edit/', $_SERVER['PATH_INFO'])) {
 			// Check referrer and see if we're coming from a doc page.
 			// If so, we're editing it, so we should force the version 
 			// to be from the referrer.
-			if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', $_SERVER['HTTP_REFERER'], $match)) {
+			if(isset($_SERVER['HTTP_REFERER']) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', $_SERVER['HTTP_REFERER'], $match)) {
 				$targetProduct = $match[1];
 				$targetVersion = $match[3];
 				if($targetVersion == "latest") {
@@ -2035,6 +2035,8 @@ HEREDOC;
 
 
 		if (preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . 'Products/', $title->__toString())) {
+			// Force reload of products, instead of using the cache.
+			PonyDocsProduct::LoadProducts(true);
 			$products = PonyDocsProduct::GetDefinedProducts();
 			$dbr = wfGetDB(DB_SLAVE);
 			foreach ($products as $product) {

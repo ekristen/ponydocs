@@ -35,7 +35,7 @@ class SpecialDocTopics extends SpecialPage
 	/**
 	 * This is called upon loading the special page.  It should write output to the page with $wgOut.
 	 */
-	public function execute( )
+	public function execute( $par )
 	{
 		global $wgOut, $wgArticlePath;
 		global $wgUser;
@@ -43,12 +43,6 @@ class SpecialDocTopics extends SpecialPage
 		// disable this special page for now per WEB-5698
 		$wgOut->addHTML( "<h1>Page Disabled</h1><p>This page has been disabled.</p>" );
 		return false;
-
-
-
-
-
-
 
 		$dbr = wfGetDB( DB_SLAVE );
 
@@ -242,4 +236,3 @@ class SpecialDocTopics extends SpecialPage
 
 	}
 }
-?>

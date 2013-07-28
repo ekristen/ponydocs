@@ -13,7 +13,7 @@ abstract class PonyDocsArticle extends Article
 
 	public $metadata = array();
 
-	public function setMetadata(array $metadata) {
+	public function setMetadata($metadata) {
 		$this->metadata = array_merge($this->metadata, $metadata);
 	}
 
