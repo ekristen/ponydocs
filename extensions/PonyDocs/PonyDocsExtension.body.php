@@ -2038,11 +2038,17 @@ HEREDOC;
 			$products = PonyDocsProduct::GetDefinedProductsBySQL();
 			$dbr = wfGetDB(DB_SLAVE);
 			foreach ($products as $product) {
-				$sql = "SELECT * FROM user_groups WHERE ug_user = 1 AND ug_group = '{$product->getShortName()}-docteam'";
+				$sql = "SELECT ug_user FROM user_groups WHERE ug_group = 'docteam' OR ug_group = 'sysop' GROUP BY ug_user";
 				$res = $dbr->query($sql);
-				if ( !$res->numRows( ) ) {
-					$update_sql = "INSERT INTO user_groups (ug_user, ug_group) VALUES ('1', '{$product->getShortName()}-docteam')";
-					$dbr->query($update_sql);
+				if ( $res->numRows() ) {
+					while ($row = $res->fetchRow()) {
+						$check_sql = "SELECT * FROM user_groups WHERE ug_user = '{$row['ug_user']}' AND ug_group = '{$product->getShortName()}-docteam'";
+						$check_res = $dbr->query($check_sql);
+						if ( !$check_res->numRows() ) {
+							$update_sql = "INSERT INTO user_groups (ug_user, ug_group) VALUES ('{$row['ug_user']}', '{$product->getShortName()}-docteam')";
+							$dbr->query($update_sql);
+						}
+					}
 				}
 			}
 		}
