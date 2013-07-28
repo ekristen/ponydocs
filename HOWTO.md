@@ -2,6 +2,8 @@
 
 ## Create your products on the front-end.
 
+**Admin Menu > Manage Products**
+
 1. Log in as your administrator user and visit the Documentation:Products page (this should happen automatically for you)
 	* If MediaWiki was installed at the base of your documentation root, then simply go to /Documentation:Products.
 2. (only needed if redirect was not done automatically) Click on the "Create" tab at the top of the page to edit the page and add new products.
@@ -17,25 +19,26 @@
 	* parent is the short name of a parent product.
 	* Child products will be displayed under their parents in product listings.
 * Here's an example of a page with the three products above:
-	```
+
 	{{#product:Foo|Foo for fooing|Foo is the synergy of three popular domain-specific languages|}}
 	{{#product:Bar|Bar for the bar|You've never seen a Bar like this before|}}
 	{{#product:Bash|Bash is not Quux|Bash is a Quux-like framework for rapid prototyping|Bar}}
-	```
+
 * Only productShortName is required. displayName will default to shortName if left empty. 
-* Please do include all the pipes if you are leaving some variables empty:
-  `{{#product:Quux|||}}`
+* Please do include all the pipes if you are leaving some variables empty: `{{#product:Quux|||}}`
 * Once the page is saved, you'll be able to move to the next step, defining your versions.
 * As you add more products, add more lines to the Documentation:Products page.
-* Don't forget to add corresponding elements to the `$ponyDocsProductsList` array in LocalSettings.php, as
-  documented in Step 5 above.
 
 ## Create your first product version.
 
 1. Logged in as your administrator user, visit the Documentation:productShortName:Versions page. (you can do this via the Admin Menu)
+
+**Admin Menu > PRODUCT > Manage Versions**
+
 	* productShortName is the shortName of one of the products defined above
 	* If MediaWiki was installed at the base of your documentation root, then simply go to
 	  /Documentation:productShortName:Versions.
+
 2. Click on the "Create" tab at the top of the page to edit the page and add new versions.
 
 ### The Documentation:productShortName:Versions page contains a listing of all versions of a product and their status
