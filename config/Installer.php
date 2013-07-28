@@ -1,4 +1,4 @@
-""<?php
+<?php
 
 # MediaWiki web-based config/installation
 # Copyright (C) 2004 Brion Vibber <brion@pobox.com>, 2006 Rob Church <robchur@gmail.com>
