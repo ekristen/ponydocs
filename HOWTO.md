@@ -86,12 +86,15 @@
 
 Admin Menu > PRODUCT > VERSION > Manage Table of Contents (for a Manual)
 
-   Use the following syntax to create the TOC for this manual:
+Use the following syntax to create the TOC for this manual:
+
 	```
 	Section Header
 	* {{#topic:Topic Title}}
 	```
-   For example:
+
+For example:
+
 	```
 	Getting Started
 	* {{#topic:Before You Begin}}
