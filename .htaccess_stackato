@@ -1,20 +1,18 @@
 ################# START SAMPLE APACHE CONFIGURATION #################
 RewriteEngine On
 
-# SEO STUFF
-# Redirect /Documentation/ to /Documentation (SEO Optimizations)
-RewriteRule ^Documentation/$ /Documentation [L,R=301]
-
-# Redirect Ugly Documentation Topics to Pretty URLs
-RewriteRule ^Documentation:(.*):(.*):(.*):(.*) /Documentation/$1/$4/$2/$3 [L,QSA,R=301]
-RewriteRule ^Documentation:(.*):(.*):(.*) /Documentation/$1/latest/$2/$3  [L,QSA,R=301]
-
 # Redirect Main_Page and Website Root
 RewriteCond %{HTTP:X-Forwarded-Port} 80
+RewriteRule ^Documentation/$ http://%{SERVER_NAME}/Documentation [L,R=301]
+RewriteRule ^Documentation:(.*):(.*):(.*):(.*) http://%{SERVER_NAME}/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
+RewriteRule ^Documentation:(.*):(.*):(.*) http://%{SERVER_NAME}/Documentation/$1/latest/$2/$3  [L,QSA,R=301]
 RewriteRule ^$ http://%{SERVER_NAME}/Documentation [L,R]
 RewriteRule ^Main_Page$ http://%{SERVER_NAME}/Documentation [L,R]
 
 RewriteCond %{HTTP:X-Forwarded-Port} 443
+RewriteRule ^Documentation/$ https://%{SERVER_NAME}/Documentation [L,R=301]
+RewriteRule ^Documentation:(.*):(.*):(.*):(.*) https://%{SERVER_NAME}/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
+RewriteRule ^Documentation:(.*):(.*):(.*) https://%{SERVER_NAME}/Documentation/$1/latest/$2/$3  [L,QSA,R=301]
 RewriteRule ^$ https://%{SERVER_NAME}/Documentation [L,R]
 RewriteRule ^Main_Page$ https://%{SERVER_NAME}/Documentation [L,R]
 

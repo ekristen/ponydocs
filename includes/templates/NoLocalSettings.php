@@ -37,7 +37,7 @@ foreach( $topdirs as $dir ){
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 <html xmlns='http://www.w3.org/1999/xhtml' lang='en'>
 	<head>
-		<title>MediaWiki <?php echo htmlspecialchars( $wgVersion ) ?></title>
+		<title>WikiDocs <?php echo htmlspecialchars( $wgVersion ) ?></title>
 		<meta http-equiv='Content-Type' content='text/html; charset=utf-8' />
 		<link href="/skins/WikiDocs/bootstrap/css/bootstrap.css" rel="stylesheet"></style>
 		<style type='text/css' media='screen'>
@@ -54,16 +54,23 @@ foreach( $topdirs as $dir ){
 		</style>
 	</head>
 	<body>
-		<h1>WikiDocs <?php echo htmlspecialchars( $wgVersion ) ?></h1>
-		<div class='error'>
-		<?php
-		if ( file_exists( 'config/LocalSettings.php' ) ) {
-			echo( 'To complete the installation, move <tt>config/LocalSettings.php</tt> to the parent directory.' );
-		} else {
-			echo( "Please <a href=\"" . htmlspecialchars( $path ) . "config/index." . htmlspecialchars( $ext ) . "\" title='setup'> set up the WikiDocs</a> first." );
-		}
-		?>
+		<div class="container">
+			<br/>
+			<div class="hero-unit">
+				<h1>WikiDocs <?php echo htmlspecialchars( $wgVersion ) ?></h1>
+				<p>The ultimate software documentation platform.</p>
+				<small> Powered by MediaWiki and the PonyDocs extension (by Splunk!)</small>
+				<br/>
 
+<?php
+			if ( file_exists( 'config/LocalSettings.php' ) ): ?>
+				<div class="error"><strong>To complete the installation, move <tt>config/LocalSettings.php</tt> to the parent directory.</strong></div>
+<?php
+			else: ?>
+				<br/><br/><a class="btn btn-primary btn-large" href="<?php print htmlspecialchars( $path ); ?>config/index.<?php print htmlspecialchars( $ext ); ?>" title='setup'>Configure WikiDocs</a>
+<?php
+			endif; ?>
+			</div>
 		</div>
 	</body>
 </html>
