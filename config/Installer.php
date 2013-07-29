@@ -670,6 +670,19 @@ print "<li style='font-weight:bold;color:green;font-size:110%'>Environment check
 
 	$conf->ShellLocale = getShellLocale( $conf->LanguageCode );
 
+	if (isset($_SERVER['STACKATO_APP_NAME']) && !empty($_SERVER['STACKATO_APP_NAME'])) {
+		$url_parts = parse_url($_SERVER['DATABASE_URL']);
+		$db_name = substr( $url_parts['path'], 1 );
+		$db_connection_string = $url_parts['host'] . ':' . $url_parts['port'];
+
+		$conf->DBserver = $url_parts['host'];
+		$conf->DBname = $db_name;
+		$conf->DBuser = $url_parts['user'];
+		$conf->DBpassword = $url_parts['pass'];
+		$conf->DBpassword2 = $url_parts['pass'];
+		$conf->DBport = $url_parts['port'];
+	}
+
 /* Check for validity */
 $errs = array();
 
@@ -1400,6 +1413,11 @@ if( $conf->posted && ( 0 == count( $errs ) ) ) {
 			print "<hr/>\n";
 			writeSuccessMessage();
 			print "</li>\n";
+
+			if (getenv('STACKATO_APP_NAME') != '') {
+				copy("LocalSettings.php", getenv('STACKATO_FILESYSTEM') . '/LocalSettings.php');
+				copy(getenv('STACKATO_FILESYSTEM') . '/LocalSettings.php', '../LocalSettings.php');
+			}
 		} else {
 			fclose( $f );
 			dieout( "<p class='error'>An error occured while writing the config/LocalSettings.php file. Check user rights and disk space then try again.</p></li>\n" );

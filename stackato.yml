@@ -1,0 +1,10 @@
+name: wikidocs
+instances: 1
+framework: php
+mem: 256M
+services:
+  ${name}-db: mysql
+  ${name}-fs: filesystem
+hooks:
+  post-staging:
+    - sh stackato-setup.sh
