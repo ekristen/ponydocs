@@ -6,5 +6,5 @@ services:
   ${name}-db: mysql
   ${name}-fs: filesystem
 hooks:
-  post-staging:
+  pre-running:
     - sh stackato-setup.sh
