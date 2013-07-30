@@ -381,22 +381,28 @@ function efProductParserFunction_Magic( &$magicWords, $langCode )
 function efProductParserFunction_Render(&$parser, $shortName = '', $longName = '', $description = '', $parent = '') {
 	global $wgUser, $wgScriptPath;
 	
-	$output = "$shortName ($longName)";
-
 	// Invalid $shortName
 	if (!preg_match(PONYDOCS_PRODUCT_REGEX, $shortName)) {
-		$output .= ' - Invalid Product Name, Please Fix';
-	}
-	
-	if ($description != '') {
-		$output .= "$description";
+		$description = ' - Invalid Product Name, Please Fix';
 	}
 	
 	if ($parent != '') {
-		$output .= "<br>Parent: $parent";
+		$parent = "Parent: {$parent}";
 	}
-	
-	$output .= "\n";
+
+	$namespace = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
+
+	$output =<<<EOL
+		<div class="product">
+			<h3>{$shortName} ({$longName}) <small>{$parent}</small></h3>
+			<ul class="nav nav-pills">
+				<li><a href="/{$namespace}:{$shortName}:Versions">Manage Versions</a></li>
+				<li><a href="/{$namespace}:{$shortName}:Manuals">Manage Manuals</a></li>
+			</ul>
+			<p class="muted">{$description}</p>
+			<hr/>
+		</div>
+EOL;
 
 	return $parser->insertStripItem($output, $parser->mStripState);
 }

@@ -223,9 +223,13 @@ class PonyDocsTemplate extends QuickTemplate {
 				$this->data['titletext'] = 'Products Management';
 				$this->data['headertext'] = $this->data['titletext'];
 				$wgOut->prependHTML("</div>");
-				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* <strong>NOTE</strong>: The order on this page dictates the order the products will appear elsewhere.</span>');
+				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* The first product listed here will be the DEFAULT product for WikiDocs.</span>');
+				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* The order on this page dictates the order the products will appear elsewhere.</span>');
+				$wgOut->prependHTML('<strong>Warning</strong>');
+				$wgOut->prependHTML('<div class="alert alert-warning">');
+				$wgOut->prependHTML('</div>');
 				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* If you leave displayName empty, productShortName will be used in links.</i></span>');
-				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* displayName, description and parent can be left empty.</i></span>');
+				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* parent can be left empty. Example: {{#product:test|Test|Test|}} (note the final "|")</i></span>');
 				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* Use {{#product:productShortName|displayName|description|parent}} to define a new product.</i></span>');
 				$wgOut->prependHTML('<strong>Instructions</strong>');
 				$wgOut->prependHTML('<div class="alert alert-success">');
