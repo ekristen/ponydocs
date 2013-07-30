@@ -52,7 +52,7 @@ $wgArticlePath = '/$1';
 // Ponydocs environment configuration.  update to your
 // specific install
 define('PONYDOCS_PRODUCT_LOGO_URL', 'http://' . $_SERVER['SERVER_NAME'] . '/extensions/PonyDocs/images/pony.png');
-define('PONYDOCS_PDF_COPYRIGHT_MESSAGE', 'Copyright Fixmo, Inc. All Rights Reserved');
+define('PONYDOCS_PDF_COPYRIGHT_MESSAGE', 'Copyright Your Company, Inc. All Rights Reserved');
 define('PONYDOCS_PDF_TITLE_IMAGE_PATH', '/extensions/PonyDocs/images/pony.png');
 define('PONYDOCS_DEFAULT_PRODUCT', 'Example');
 define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
