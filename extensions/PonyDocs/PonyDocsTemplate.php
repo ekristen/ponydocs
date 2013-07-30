@@ -1,5 +1,19 @@
 <?php
 
+class PonyDocsSkinTemplate extends SkinTemplate {
+	// We are going to totally overwrite this functionality to fix a weird issue
+	public function setTitle($t) {
+		global $wgTitle;
+		$this->mTitle = $wgTitle;
+	}
+
+	function printSource() {
+		return '';
+	}
+}
+
+
+
 /**
  * PonyDocsTemplate Class
  * 
@@ -14,6 +28,8 @@ class PonyDocsTemplate extends QuickTemplate {
 	var $template = 'default';
 
 	var $templateDirectory = 'templates';
+
+	var $_pageTitle = 'WikiDocs';
 
 	/**
 	 * This lets you map full titles or namespaces to specific PHP template files and prep methods.  The special '0' index
@@ -92,6 +108,8 @@ class PonyDocsTemplate extends QuickTemplate {
 	 * from the QuickTemplate OutputPage function.
 	 */
 	function execute() {
+		global $wgOut;
+
 		$this->preSetup();
 
 		$this->skin = $skin = $this->data['skin'];
@@ -237,7 +255,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			else
 			{
 				$subpieces = explode("/", $wgTitle->__toString( ));
-				if (count($subpieces) == 2 && $subpieces[0] == 'Documentation') {
+				if (count($subpieces) >= 2 && $subpieces[0] == 'Documentation') {
 					$product = PonyDocsProduct::GetProductByShortName($subpieces[1]);
 					$this->data['headertext'] = $product->getLongName() . ' <small>Manuals</small>';
 				}
@@ -723,6 +741,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		
 		return false;
 	} // end function isDocumentationAdmin
+
 
 } // end class PonyDocsTemplate extends QuickTemplate
 

@@ -19,7 +19,7 @@ if( !defined( 'MEDIAWIKI' ) )
  * @todo document
  * @ingroup Skins
  */
-class SkinWikiDocs extends SkinTemplate {
+class SkinWikiDocs extends PonyDocsSkinTemplate {
 	var $skinname = 'WikiDocs';
 	var $stylename = 'WikiDocs';
 	var $template = 'WikiDocsTemplate';
@@ -35,15 +35,51 @@ class SkinWikiDocs extends SkinTemplate {
 		$out->addStyle( 'WikiDocs/main.css');
 	}
 
-	// We are going to totally overwrite this functionality to fix a weird issue
-	public function setTitle($t) {
-		global $wgTitle;
-		$this->mTitle = $wgTitle;
+	function tocIndent() {
+		return "\n<ul class=\"nav nav-list\">";
 	}
 
-	function printSource() {
-		return '';
+	/**
+	 * Finish one or more sublevels on the Table of Contents
+	 */
+	function tocUnindent($level) {
+		return "</li>\n" . str_repeat( "</ul>\n</li>\n", $level>0 ? $level : 0 );
 	}
+
+	/**
+	 * End a Table Of Contents line.
+	 * tocUnindent() will be used instead if we're ending a line below
+	 * the new level.
+	 */
+	function tocLineEnd() {
+		return "</li>\n";
+ 	}
+	
+
+	function tocLine( $anchor, $tocline, $tocnumber, $level, $sectionIndex = false ) {
+		$classes = "toclevel-$level";
+		if ( $sectionIndex !== false )
+			$classes .= " tocsection-$sectionIndex";
+		return "\n<li class=\"$classes\"><a href=\"#" .
+			$anchor . '"><span class="tocnumber">' . '</span> <span class="toctext">' .
+			$tocline . '</span></a>';
+	}
+
+	function tocList($toc) {
+		$title = wfMsgHtml('toc') ;
+
+		$output =<<<EOL
+			<div id="contents" class="pull-right well well-small">
+				<ul class="nav nav-list">
+					<li class="nav-header">{$title}</li>
+					<li>{$toc}</li>
+				</ul>
+			</div>
+EOL;
+
+		return $output;
+	}
+	
 }
 
 
@@ -416,21 +452,18 @@ EOL;
 		$manuals = PonyDocsProductManual::GetDefinedManuals($this->data['selectedProduct'], true);
 		$version = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion']);
 
-		$nomv = false;
+		$nomv = true;
 		foreach ($manuals as $manual) {
 			$toc = new PonyDocsTOC($manual, $version, $product);
 			$toc_versions = $toc->getVersions();
-			if (empty($toc_versions))
-				$nomv = true;
+			if (!empty($toc_versions))
+				$nomv = false;
 		}
 
 		if (empty($manuals) || $nomv == true) {
-			if ($this->isAdmin()) {
-				$extra  = '<a href="/index.php?title=Documentation:'.$product->getShortName().':Manuals&action=edit" class="pull-right">Manage Manuals</a>';
-			}
 			$output =<<<EOL
 				<div class="alert alert-warning">
-					* This product does not have any defined manuals for this version. {$extra}<br>
+					* This product does not have any defined manuals for this version.<br>
 					* If you have versions and manuals defined, then you need to create your Table of Contents (access via Admin Menu)
 				</div>
 EOL;
