@@ -87,7 +87,7 @@ class SpecialImport extends SpecialPage {
 	/**
 	 * Do the actual import
 	 */
-	private function doImport() {
+	protected function doImport() {
 		global $wgOut, $wgRequest, $wgUser, $wgImportSources, $wgExportMaxLinkDepth;
 		$isUpload = false;
 		$this->namespace = $wgRequest->getIntOrNull( 'namespace' );
@@ -156,7 +156,7 @@ class SpecialImport extends SpecialPage {
 		}
 	}
 
-	private function showForm() {
+	protected function showForm() {
 		global $wgUser, $wgOut, $wgRequest, $wgImportSources, $wgExportMaxLinkDepth;
 
 		$action = $this->getTitle()->getLocalUrl( array( 'action' => 'submit' ) );

@@ -137,6 +137,7 @@ class PonyDocsTOC
 	 */
 	public function load( )
 	{
+
 		/**
 		 * First define the TOC prefix, which will be something like 'Documentation:<manualShort>TOC'.  We then scan the categorylinks
 		 * table for the initial version supplied as 'cl_to'.  This should only return one row, but we're going to ignore anything but

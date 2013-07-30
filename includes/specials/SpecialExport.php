@@ -188,7 +188,7 @@ class SpecialExport extends SpecialPage {
 	 * @param string $page User input on what page(s) to export
 	 * @param mixed  $history one of the WikiExporter history export constants
 	 */
-	private function doExport( $page, $history, $list_authors ) {
+ 	protected function doExport( $page, $history, $list_authors ) {
 		global $wgExportMaxHistory;
 		
 		$pageSet = array(); // Inverted index of all pages to look up
