@@ -56,7 +56,11 @@ else {
 // append empty group for backwards compabability with "docteam" and "preview" groups
 $ponyDocsProductsList[] = '';
 
+// TODO: Check if this is necessary to keep?
+// Legacy -- we'll set it to the first product.
+define('PONYDOCS_DEFAULT_PRODUCT', $ponyDocsProductsList[0]);
 
+// Setup Permissions
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['read'] 			= true;
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['edit'] 			= true;
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['upload']			= true;
