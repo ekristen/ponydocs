@@ -147,7 +147,7 @@ EOL;
 
 	public function userMenu() {
 		if (!$this->globals->wgUser->isLoggedIn()) {
-			$output = '<a class="btn btn-primary pull-right" href="/Special:UserLogin">Login</a>';
+			$output = '<a class="btn btn-primary pull-right" href="/Special:UserLogin"><i class="icon-signin"></i> Login</a>';
 		}
 		else {
 			$first = array_shift($this->data['personal_urls']);
@@ -557,7 +557,7 @@ EOL;
 
 		if ($this->data['notspecialpage']) { 
 			if ($this->data['nav_urls']['recentchangeslinked'] ) {
-				$toolbox_items[] = '<li><a href="'.$this->data['nav_urls']['recentchangeslinked']['href'].'">'.$this->translator->translate('recentchangeslinked-toolbox').'</a></li>';
+				$toolbox_items[] = '<li><a href="'.$this->data['nav_urls']['recentchangeslinked']['href'].'"><i class="icon-archive"></i> '.$this->translator->translate('recentchangeslinked-toolbox').'</a></li>';
 			}
 		}
 		if (isset( $this->data['nav_urls']['trackbacklink'] ) && $this->data['nav_urls']['trackbacklink'] ) {
