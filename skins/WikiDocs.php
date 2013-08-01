@@ -33,6 +33,8 @@ class SkinWikiDocs extends PonyDocsSkinTemplate {
 		$out->addStyle( 'WikiDocs/bootstrap/css/bootstrap-responsive.min.css');
 		$out->addStyle( 'WikiDocs/font-awesome/css/font-awesome.min.css');
 		$out->addStyle( 'WikiDocs/main.css');
+		
+		$out->addMeta('viewport', 'width=device-width, initial-scale=1.0');
 	}
 
 	function tocIndent() {

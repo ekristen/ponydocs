@@ -10,6 +10,7 @@ class PonyDocsSkinTemplate extends SkinTemplate {
 	function printSource() {
 		return '';
 	}
+	
 }
 
 
@@ -30,6 +31,7 @@ class PonyDocsTemplate extends QuickTemplate {
 	var $templateDirectory = 'templates';
 
 	var $_pageTitle = 'WikiDocs';
+
 
 	/**
 	 * This lets you map full titles or namespaces to specific PHP template files and prep methods.  The special '0' index
