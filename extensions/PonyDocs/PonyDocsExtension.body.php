@@ -47,6 +47,7 @@ class PonyDocsExtension
 	{
 		global $wgScriptPath;
 		global $wgHooks, $wgArticlePath;
+		global $wgLanguageCode;
 
 		$this->setPathInfo( );
 
@@ -55,10 +56,10 @@ class PonyDocsExtension
 		 * 		Documentation/<product>/<latest|version>/<manual>/<topic>
 		 * Then we need to register a hook to do the translation of this to a real topic name.
 		 */
-		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/([a-zA-Z]{2}\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
+		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
 			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
 		}
-		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/([a-zA-Z]{2}\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)\/(.*)$/i', $_SERVER['PATH_INFO'], $match ))
+		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)\/(.*)$/i', $_SERVER['PATH_INFO'], $match ))
 		{
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
 			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
@@ -74,6 +75,10 @@ class PonyDocsExtension
 			!preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+)TOC([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match )
 		) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
+		}
+
+		if (PONYDOCS_LANGUAGE_AUTOUI == true) {
+			$wgLanguageCode = strtolower($match[2]);
 		}
 	}
 

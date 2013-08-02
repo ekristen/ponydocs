@@ -56,7 +56,6 @@ define('PONYDOCS_PDF_COPYRIGHT_MESSAGE', 'Copyright Your Company, Inc. All Right
 define('PONYDOCS_PDF_TITLE_IMAGE_PATH', '/extensions/PonyDocs/images/pony.png');
 define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
 
-
 include_once($IP . "/extensions/PonyDocs/PonyDocsExtension.php");
 #################  PONYDOCS END #################
 
