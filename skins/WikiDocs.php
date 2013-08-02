@@ -149,7 +149,7 @@ EOL;
 
 	public function userMenu() {
 		if (!$this->globals->wgUser->isLoggedIn()) {
-			$output = '<a class="btn btn-primary pull-right" href="/Special:UserLogin"><i class="icon-signin"></i> Login</a>';
+			$output = '<a class="btn btn-primary pull-right" href="/Special:UserLogin"><i class="icon-signin"></i> '.wfMsgForContent('login').'</a>';
 		}
 		else {
 			$first = array_shift($this->data['personal_urls']);
@@ -290,7 +290,7 @@ EOL;
 		}
 
 		$output[] = '<li class="divider"></li>';
-		$output[] = '<li><a href="/index.php?title='.$this->globals->wgTitle->__toString().'&action=pdfbook"><i class="icon-book"></i> PDF Version</a></li>';
+		$output[] = '<li><a href="/index.php?title='.$this->globals->wgTitle->__toString().'&action=pdfbook"><i class="icon-book"></i> PDF '.wfMsgForContent('version').'</a></li>';
 
 		$manual_output = implode("\n", $output);
 
@@ -356,7 +356,7 @@ EOL;
 		$output =<<<EOL
 			<div class="muted offeredLanguages">
 				<div class="pull-right">
-					Available Translations: {$output_languages}
+					Available Translations: {$output_languages} --&nbsp;
 				</div>
 			</div>
 EOL;
@@ -401,7 +401,7 @@ EOL;
 				$extra .= ' [' . $version->getVersionStatus() . ']';
 			}
 			if ($latest == $version->getVersionName()) {
-				$extra .= ' (latest)';
+				$extra .= ' ('.wfMsgForContent('histlast').')';
 			}
 			if ($this->data['selectedVersion'] == $version->getVersionName()) {
 				$selected = ' selected="selected"';
@@ -606,10 +606,12 @@ EOL;
 
 		$output_toolbox = implode("\n", $toolbox_items);
 
+		$toolbox_header = wfMsgForContent('toolbox');
+
 		$output =<<<EOL
 			<div class="well well-small">
 				<ul class="nav nav-list">
-					<li class="nav-header">Toolbox</li>
+					<li class="nav-header">{$toolbox_header}</li>
 					{$output_toolbox}
 				</ul>
 			</div>

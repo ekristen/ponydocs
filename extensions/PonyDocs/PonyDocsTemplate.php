@@ -614,7 +614,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		$parts = explode(":", $this->globals->wgTitle->__toString());
 
-		if (count($parts) > 5) {
+		if (count($parts) > 5 && $parts[0] == 'Documentation') {
 			$page_title = PonyDocsTopic::FindH1ForTitle( $this->globals->wgTitle->__toString() );
 
 			$parts = array($parts[0], $parts[1], $parts[4], $parts[2], $parts[3]);

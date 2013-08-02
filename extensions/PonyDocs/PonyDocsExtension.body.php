@@ -78,7 +78,7 @@ class PonyDocsExtension
 		}
 
 		if (PONYDOCS_LANGUAGE_AUTOUI == true) {
-			$wgLanguageCode = strtolower($match[2]);
+			$wgLanguageCode = isset($match[2]) && !empty($match[2]) ? strtolower($match[2]) : PONYDOCS_LANGUAGE_DEFAULT;
 		}
 	}
 
