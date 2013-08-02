@@ -167,6 +167,8 @@ class PonyDocsTemplate extends QuickTemplate {
 		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
 		$this->data['manuals'] = $ponydocs->getManualsForProduct( $this->data['selectedProduct'] );
 
+		$this->data['selectedLanguage'] = $ponydocs->getCurrentLanguage();
+
 		/**
 		 * Adjust content actions as needed, such as add 'view all' link.
 		 */
@@ -206,7 +208,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		/**
 		 * This isn't a specific topic+version -- handle appropriately.
 		 */
-		if( sizeof( $pieces ) < 4 )
+		if( sizeof( $pieces ) < 5 )
 		{
 			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX, $wgTitle->__toString( )))
 			{
@@ -247,7 +249,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				$wgOut->prependHTML( '<strong>Instructions</strong>' );
 				$wgOut->prependHTML( '<div class="alert alert-success">');
 			}
-			else if ( count( $pieces ) >= 3 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ))
+			else if ( count( $pieces ) >= 4 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ))
 			{
 				$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
 				if( $pManual )
@@ -303,7 +305,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		{
 			$p = PonyDocsProduct::GetProductByShortName( $this->data['selectedProduct'] );
 			$v = PonyDocsProductVersion::GetVersionByName( $this->data['selectedProduct'], $this->data['selectedVersion'] );
-			$toc = new PonyDocsTOC( $pManual, $v, $p );
+			$toc = new PonyDocsTOC( $pManual, $v, $p, $this->data['selectedLanguage'] );
 			list( $this->data['manualtoc'], $this->data['tocprev'], $this->data['tocnext'], $this->data['tocstart'] ) = $toc->loadContent( );
 			$this->data['toctitle'] = $toc->getTOCPageTitle();
 		}
@@ -329,6 +331,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			$this->data['inlinetoc'] = $topic->getSubContents( );
 			$this->data['versionclass'] = $topic->getVersionClass( );
 			$this->data['versionGroupMessage'] = $this->data['pVersion']->getVersionGroupMessage();
+			$this->data['topictranslations'] = $topic->getTranslations();
 
 			/**
 			 * Sort of a hack -- we only use this right now when loading a TOC page which is new/does not exist.  When this
@@ -530,8 +533,8 @@ class PonyDocsTemplate extends QuickTemplate {
 					$manuals = PonyDocsProductManual::getDefinedManuals($product->getShortName());
 					if (isset($manuals) && !empty($manuals)) {
 						foreach (PonyDocsProductManual::getDefinedManuals($product->getShortName()) as $manual) {
-							$subsubitems[] = array('label' => $manual->getLongName());
-							$subsubitems[] = array('label' => 'Manage Table of Contents', 'url' => '/Documentation:'.$product->getShortName().':'.$manual->getShortName().'TOC'.$version->getVersionName());
+							$subsubitems[] = array('label' => $manual->getLongName() . ' (Language: '.PONYDOCS_LANGUAGE_DEFAULT.')');
+							$subsubitems[] = array('label' => 'Manage Table of Contents', 'url' => '/Documentation:'.$product->getShortName().':'.$manual->getShortName().'TOC'.$version->getVersionName().':'.PONYDOCS_LANGUAGE_DEFAULT);
 						}
 					}
 
@@ -611,7 +614,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		$parts = explode(":", $this->globals->wgTitle->__toString());
 
-		if (count($parts) > 4) {
+		if (count($parts) > 5) {
 			$page_title = PonyDocsTopic::FindH1ForTitle( $this->globals->wgTitle->__toString() );
 
 			$parts = array($parts[0], $parts[1], $parts[4], $parts[2], $parts[3]);

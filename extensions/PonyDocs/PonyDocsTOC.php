@@ -89,11 +89,12 @@ class PonyDocsTOC
 	 * @param PonyDocsVersion $initialVersion Initial version (find manual tagged for this version?).
 	 * @param PonyDocsProduct $product The product all of this is for.
 	 */
-	public function __construct( PonyDocsProductManual& $pManual, PonyDocsProductVersion& $initialVersion, PonyDocsProduct& $product )
+	public function __construct( PonyDocsProductManual& $pManual, PonyDocsProductVersion& $initialVersion, PonyDocsProduct& $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		$this->pManual = $pManual;
 		$this->pInitialVersion = $initialVersion;
 		$this->pProduct = $product;
+		$this->pLanguage = $language;
 		$this->load( );
 	}
 
@@ -145,7 +146,7 @@ class PonyDocsTOC
 		 */
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array( 	
-					"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( strtolower( $this->pManual->getShortName( ))) . "toc%'",
+					"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( strtolower( $this->pManual->getShortName( ))) . "toc%:".$this->pLanguage."'",
 					"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( $this->pInitialVersion->getVersionName( )) . "'" ),
 					__METHOD__ );
 
@@ -262,7 +263,7 @@ class PonyDocsTOC
 		}
 
 		$cache = PonyDocsCache::getInstance();
-		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion;
+		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion . "-" . $this->pLanguage;
 		$toc = $cache->get($key);
 		if ($toc === null) {
 			// Cache did not exist, let's load our content is build up our cache 
@@ -311,7 +312,7 @@ class PonyDocsTOC
 
 					$title_suffix = preg_replace('/([^' . str_replace(' ', '', Title::legalChars()) . '])/', '', $baseTopic);
 					$title = PONYDOCS_DOCUMENTATION_PREFIX . "$selectedProduct:$selectedManual:$title_suffix";
-					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion($title, $selectedProduct);
+					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion($title, $selectedProduct, $this->pLanguage);
 
 					/**
 					 * Hide topics which have no content (i.e. have not been created 
@@ -338,7 +339,7 @@ class PonyDocsTOC
 					}
 
 					$href = str_replace('$1', 
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
+						"{$this->pLanguage}/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
 						$wgArticlePath);
 
 					$toc[$idx] = array(
@@ -383,7 +384,7 @@ class PonyDocsTOC
 					$safeVersion = preg_quote($selectedVersion, '#');
 					// Lets be specific and replace the version and not some other part of the URI that might match...
 					$toc[$idx]['link'] = preg_replace(
-						'#^/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+						'#^/' . $this->pLanguage . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 							'/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/' . "$safeVersion#",
 						'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
 						$toc[$idx]['link'],

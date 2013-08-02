@@ -17,18 +17,22 @@ class PonyDocsWiki
 	 * @var PonyDocsWiki
 	 */
 	static protected $instance = array();
+	
+	protected $language = PONYDOCS_LANGUAGE_DEFAULT;
 
 	/**
 	 * Made private to enforce singleton pattern.  On instantiation (through the first call to 'getInstance') we cache our
 	 * versions and manuals [we don't save them we just cause them to load -- is this necessary?].
 	 */
-	private function __construct( $product )
+	private function __construct( $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		/**
 		 * @FIXME:  Only necessary in Documentation namespace!
 		 */
 		PonyDocsProductVersion::LoadVersionsForProduct( $product, true );
 		PonyDocsProductManual::LoadManualsForProduct( $product, true );
+
+		$this->language = strtolower($language);
 	}
 
 	/**
@@ -37,10 +41,10 @@ class PonyDocsWiki
 	 * @static
 	 * @return PonyDocsWiki
 	 */
-	static public function &getInstance( $product )
+	static public function &getInstance( $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		if( !isset(self::$instance[$product]) )
-			self::$instance[$product] = new PonyDocsWiki( $product );
+			self::$instance[$product] = new PonyDocsWiki( $product, $language );
 		return self::$instance[$product];
 	}
 
@@ -199,6 +203,12 @@ class PonyDocsWiki
 
 		return $sidebar;
 	}
+	
+	
+	public function getCurrentLanguage() {
+		return $this->language;
+	}
+	
 }
 
 /**

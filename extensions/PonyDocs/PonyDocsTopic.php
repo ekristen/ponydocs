@@ -63,8 +63,10 @@ class PonyDocsTopic
 		//$this->pArticle->loadContent( );
 		//echo '<pre>' . $article->getContent( ) . '</pre>';
 		$this->pTitle = $article->getTitle( );
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString( )))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $match))
 			$this->mIsDocumentationTopic = true;
+
+		$this->pLanguage = $match[4];
 	}
 
 	/**
@@ -85,6 +87,10 @@ class PonyDocsTopic
 	public function & getTitle( )
 	{
 		return $this->pTitle;
+	}
+
+	public function getLanguage() {
+		return $this->pLanguage;
 	}
 
 	/**
@@ -191,12 +197,12 @@ class PonyDocsTopic
 	 * @param string $baseTopic
 	 * @param string $product
 	 */
-	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product )
+	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		$dbr = wfGetDB( DB_SLAVE );
 
 		$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%'",
+			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%:".$language."'",
 					"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ), __METHOD__ );
 
 		if(!$res->numRows( ))
@@ -358,7 +364,7 @@ class PonyDocsTopic
 	 */
 	public function getVersionClass( )
 	{
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $matches))
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $matches))
 			// This is not a documentation title.
 			return "unknown";
 		$productName = $matches[1];
@@ -409,13 +415,40 @@ class PonyDocsTopic
 	 */
 	public function getBaseTopicName( )
 	{
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $match ))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $match ))
 		{
 			return sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
 		}
 
 		return '';
 	}
+	
+	
+	public function getTranslations( ) {
+		$dbr = wfGetDB( DB_SLAVE );
+		$revision = $this->pArticle->mRevision;
+
+		if (!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $matches ))
+			return;
+
+		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
+		$res = $dbr->select( 'categorylinks', 'cl_to',
+							"cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
+
+		$tempLanguages = array();
+
+		while ( $row = $dbr->fetchObject( $res ))
+		{
+			if( preg_match( '/^L:(.*)/i', $row->cl_to, $match ))
+			{
+				list($product, $manual) = explode(":", $matches[1]);
+				$tempLanguages[$match[1]] = array('name' => $match[1], 'href' => "{$match[1]}/Documentation/{$product}/{$matches[3]}/{$manual}/{$matches[2]}");
+			}
+		}
+
+		return $this->languages = $tempLanguages;
+	}
+	
 };
 
 /**

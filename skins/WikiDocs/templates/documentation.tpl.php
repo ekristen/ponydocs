@@ -100,6 +100,8 @@
 						<?php print $this->generateTopicPager(); ?>
 
 						<?php print $this->affectedVersionsHtml(); ?>
+						
+						<?php print $this->offeredLanguagesHtml(); ?>
 					</div>
 				</div>
 			</div> <!-- end div.tabbable.tabs-right -->

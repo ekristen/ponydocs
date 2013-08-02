@@ -341,6 +341,28 @@ EOL;
 
 		return $output;
 	}
+	
+	public function offeredLanguagesHtml() {
+		$output = '';
+
+		if (isset($this->data['topictranslations']) && !empty($this->data['topictranslations'])) {
+			foreach ($this->data['topictranslations'] as $idx => $data) {
+				$languages[] = '<a href="/' . $data['href'] . '">' . $data['name'] . '</a>';
+			}
+		}
+
+		$output_languages = implode(' , ', $languages);
+
+		$output =<<<EOL
+			<div class="muted offeredLanguages">
+				<div class="pull-right">
+					Available Translations: {$output_languages}
+				</div>
+			</div>
+EOL;
+
+		return $output;
+	}
 
 
 	function productChangeHtml() {

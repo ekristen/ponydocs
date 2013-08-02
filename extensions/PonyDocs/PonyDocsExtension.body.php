@@ -69,8 +69,10 @@ class PonyDocsExtension
 		 * PONYDOCS_DOCUMENTATION_PREFIX . '<product>:<manual>:<topic>'
 		 * With no version.  Use the latest RELEASED version of the topic.
 		 */
-		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+)(([^:]+))?$/i', $_SERVER['PATH_INFO'], $match ))
-		{
+		else if (
+			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match ) &&
+			!preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+)TOC([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match )
+		) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
 		}
 	}
@@ -145,8 +147,8 @@ class PonyDocsExtension
 		 *  3= Version OR 'latest' as a string.
 		 *  4= Wiki topic name.
 		 */
-		$productName = $matches[1];
-		$versionName = $matches[2];
+		$productName = $matches[3];
+		$versionName = $matches[4];
 		$version = '';
 
 		PonyDocsProductVersion::LoadVersionsForProduct($productName);
@@ -307,6 +309,8 @@ class PonyDocsExtension
 	{
 		global $wgArticlePath;
 
+		print_r($title->__toString()); die;
+
 		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 
 		// If this article doesn't have a valid manual, don't display the article
@@ -403,8 +407,6 @@ class PonyDocsExtension
 		global $wgScriptPath;
 		global $wgArticlePath, $wgTitle, $wgArticle, $wgOut, $wgHooks;
 
-		$wgTitle = $title;
-
 		$dbr = wfGetDB( DB_SLAVE );
 
 		/**
@@ -419,13 +421,11 @@ class PonyDocsExtension
 
 		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 
-
-		$language = null;
-		$lanextra = '';
-		if (!empty($matches[2]) && strtolower($matches[2]) != PONDOCS_LANGUAGE_DEFAULT) {
+		$language = PONYDOCS_LANGUAGE_DEFAULT;
+		if (!empty($matches[2]) && strtolower($matches[2]) != PONYDOCS_LANGUAGE_DEFAULT) {
 			$language = strtolower($matches[2]);
-			$langextra = ":{$language}";
 		}
+		$langextra = ":{$language}";
 
 		/**
 		 * At this point $matches contains:
@@ -768,7 +768,7 @@ class PonyDocsExtension
 	{
 		$title = $article->getTitle( );
 
-		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))
+		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)(:([a-zA-Z]{2}))?/i', $title->__toString( ), $match ))
 		{
 			/**
 			 * Extract our version and manual objects.  From it build the cache key then REMOVE IT.  THEN, create our PonyDocsTOC
@@ -779,15 +779,16 @@ class PonyDocsExtension
 			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
 			$pManual = PonyDocsProductManual::GetManualByShortName( $match[1], $match[2] );
 			$pVersion = PonyDocsProductVersion::GetVersionByName( $match[1], $match[3] );
+			$pLanguage = $match[5];
 
-			$tocKey = PonyDocsTOC . '_' . $pProduct->getShortName() . '_' . $pManual->getShortName( ) . '_' . $pVersion->getName( );
+			$tocKey = PonyDocsTOC . '_' . $pProduct->getShortName() . '_' . $pManual->getShortName( ) . '_' . $pVersion->getName( ) . '_' . $pLanguage;
 			
 			$cache->remove( $tocKey );
 
 			// Clear any PDF for this manual
 			PonyDocsPdfBook::removeCachedFile($pProduct->getShortName(), $pManual->getShortName(), $pVersion->getName());
 
-			$pTOC = new PonyDocsTOC( $pManual, $pVersion, $pProduct );
+			$pTOC = new PonyDocsTOC( $pManual, $pVersion, $pProduct, $pLanguage);
 			$pTOC->loadContent( );
 		}
 
@@ -1850,9 +1851,9 @@ HEREDOC;
 			// Check referrer and see if we're coming from a doc page.
 			// If so, we're editing it, so we should force the version 
 			// to be from the referrer.
-			if(isset($_SERVER['HTTP_REFERER']) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', $_SERVER['HTTP_REFERER'], $match)) {
-				$targetProduct = $match[1];
-				$targetVersion = $match[3];
+			if(isset($_SERVER['HTTP_REFERER']) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', $_SERVER['HTTP_REFERER'], $match)) {
+				$targetProduct = $match[3];
+				$targetVersion = $match[5];
 				if($targetVersion == "latest") {
 					PonyDocsProductVersion::SetSelectedVersion($targetProduct, PonyDocsProductVersion::GetLatestReleasedVersion($targetProduct)->getVersionName());
 				}
@@ -1868,10 +1869,11 @@ HEREDOC;
 		// That regex sucks! How do you know if "Beta" is a version or a manual? What if both exist with same name?
 		// additionally it catches versions with dots like 1.1 but not without like 1
 		// it should only catch the full manual URL - product/version/manual - we cannot support WEB-3862
-		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/(([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/)(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
-			$targetProduct = $match[1];
-			$targetManual = $match[4];
-			$targetVersion = $match[3];
+		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/(([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/)(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
+			$targetProduct = $match[3];
+			$targetManual = $match[6];
+			$targetVersion = $match[5];
+			$targetLanguage = $match[1];
 
 			$p = PonyDocsProduct::GetProductByShortName($targetProduct);
 
@@ -1999,7 +2001,7 @@ HEREDOC;
 		// Update doc links
 		PonyDocsExtension::updateOrDeleteDocLinks("update", $article, $text);
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
+		if( !preg_match( '/^([a-zA-Z]{2})?' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
 			return true;
 		}
 		// Okay, article is in doc namespace
