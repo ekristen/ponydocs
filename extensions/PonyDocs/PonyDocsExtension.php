@@ -190,19 +190,20 @@ function efPonyDocsSetup()
 		wfSetupSession();
 		if (PONYDOCS_SESSION_DEBUG) {error_log("DEBUG [" . __METHOD__ . "] started session");}
 	}
+
 	// Set selected product from URL
-	if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '[\/|:]{1}(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)[\/|:]?/i', $_SERVER['PATH_INFO'], $match)) {
-		PonyDocsProduct::SetSelectedProduct($match[3]);
+	if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)([a-zA-Z{2}]\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '[\/|:]{1}(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)[\/|:]?/i', $_SERVER['PATH_INFO'], $match)) {
+		PonyDocsProduct::SetSelectedProduct($match[4]);
 	}
 	// Set selected version from URL
 	// - every time from /-separated title URLs
 	// - only when no selected version already set from :-separated title
 	$currentVersion =  PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct(), false);
-	if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)\/(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match)
-		|| preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)\/['.PONYDOCS_PRODUCTMANUAL_LEGALCHARS.']+TOC(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match)
-		|| (!isset($currentVersion) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_PREFIX . '(['.PONYDOCS_PRODUCT_LEGALCHARS.']+):['.PONYDOCS_PRODUCTMANUAL_LEGALCHARS.']+TOC(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match))
-		|| (!isset($currentVersion) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)' . PONYDOCS_DOCUMENTATION_PREFIX . '(['.PONYDOCS_PRODUCT_LEGALCHARS.']+):['.PONYDOCS_PRODUCTMANUAL_LEGALCHARS.']+:[^:]+:(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match))) {
-		$result = PonyDocsProductVersion::SetSelectedVersion($match[3], $match[4]);
+	if (preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)([a-zA-Z{2}]\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)\/(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match)
+		|| preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)([a-zA-Z{2}]\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(['.PONYDOCS_PRODUCT_LEGALCHARS.']+)\/['.PONYDOCS_PRODUCTMANUAL_LEGALCHARS.']+TOC(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match)
+		|| (!isset($currentVersion) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)([a-zA-Z{2}]\/)?' . PONYDOCS_DOCUMENTATION_PREFIX . '(['.PONYDOCS_PRODUCT_LEGALCHARS.']+):['.PONYDOCS_PRODUCTMANUAL_LEGALCHARS.']+TOC(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match))
+		|| (!isset($currentVersion) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/((index.php\?title=)|)([a-zA-Z{2}]\/)?' . PONYDOCS_DOCUMENTATION_PREFIX . '(['.PONYDOCS_PRODUCT_LEGALCHARS.']+):['.PONYDOCS_PRODUCTMANUAL_LEGALCHARS.']+:[^:]+:(['.PONYDOCS_PRODUCTVERSION_LEGALCHARS.']+)/i', $_SERVER['PATH_INFO'], $match))) {
+		$result = PonyDocsProductVersion::SetSelectedVersion($match[4], $match[5]);
 		if (is_null($result)) {
 			// this version isn't available to this user; go away
 			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
@@ -692,6 +693,7 @@ set_error_handler("PonyDocsErrorHandler");
  * More details and list of hooks @ http://www.mediawiki.org/wiki/Manual:Hooks
  */
 
+/*
 $wgHooks['BeforePageDisplay'][] = 'PonyDocsExtension::onBeforePageDisplay';
 $wgHooks['ArticleSave'][] = 'PonyDocsExtension::onArticleSave';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSave_CheckTOC';
@@ -714,7 +716,7 @@ $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditForm
 
 // Have the extension do the database upgrades
 $wgHooks['LoadExtensionSchemaUpdates'][] = 'PonyDocsExtension::LoadExtensionSchemaUpdates';
-
+*/
 /**
  * End of file.
  */
