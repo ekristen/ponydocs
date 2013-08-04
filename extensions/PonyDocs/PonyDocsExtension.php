@@ -254,7 +254,7 @@ function efManualParserFunction_Magic( &$magicWords, $langCode )
  */
 function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' , $param3 = '')
 {
-	global $wgArticlePath, $wgUser, $wgScriptPath;
+	global $wgArticlePath, $wgUser, $wgScriptPath, $wgLanguageNames;
 
 	$valid = true;
 	if( !preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $param1 ) || !strlen( $param1 ) || !strlen( $param2 ) || !isset( $param3 ) )
@@ -286,25 +286,23 @@ function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' , $
 		$default = '';
 		$other   = array();
 		while ($row = $dbr->fetchObject( $res )) {
-			if (preg_match('/:([a-zA-Z]{2})$/i', $row->cl_sortkey, $match) && strtolower($match[1]) == PONYDOCS_LANGUAGE_DEFAULT) {
-				// default language
-				$default = '<a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">' . $param2 . "</a>\n";
-			}
-			else {
-				$other[] = '<li><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">' . $match[1] . "</a></li>\n";
+			if (preg_match('/:([a-zA-Z]{2})$/i', $row->cl_sortkey, $match)) {
+				$other[] = '<li><a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '" style="font-size: 1.3em;">' . $wgLanguageNames[$match[1]] . "</a></li>\n";
 			}
 		};
 
 		$other_output = implode(" , ", $other);
 
 		$output =<<<EOL
-			<p>
-				{$default}
+			<div>
+				<h3>{$param2}</h3>
 				<ul class="nav nav-pills">
+					<li class="disabled"><a href="#">Manage TOC</a></li>
 					{$other_output}
 				</ul>
-				<div class="text-info">{$param3}</div>
-			</p>
+				<blockquote>{$param3}</blockquote>
+				<hr/>
+			</div>
 EOL;
 	}
 

@@ -132,7 +132,12 @@ EOL;
 				$items[] = '<li class="active">'.$item['label'].'</li>';
 			}
 			else {
-				$items[] = '<li><a href="'.$item['url'].'">'.$item['label'].'</a> <span class="divider">/</span></li>';
+				if (isset($item['url'])) {
+					$items[] = '<li><a href="'.$item['url'].'">'.$item['label'].'</a> <span class="divider">/</span></li>';
+				}
+				else {
+					$items[] = '<li class="active">'.$item['label'].' <span class="divider">/</span></li>';
+				}
 			}
 		}
 
@@ -353,13 +358,15 @@ EOL;
 
 		$output_languages = implode(' , ', $languages);
 
-		$output =<<<EOL
-			<div class="muted offeredLanguages">
-				<div class="pull-right">
-					Available Translations: {$output_languages} --&nbsp;
+		if (!empty($output_languages)) {
+			$output =<<<EOL
+				<div class="muted offeredLanguages">
+					<div class="pull-right">
+						Other Translations: {$output_languages} --&nbsp;
+					</div>
 				</div>
-			</div>
 EOL;
+		}
 
 		return $output;
 	}

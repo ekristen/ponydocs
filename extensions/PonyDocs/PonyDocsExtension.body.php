@@ -674,7 +674,7 @@ class PonyDocsExtension
 		 */
 		$matches = array( );
 
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)/i', $title->__toString( ), $match ))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*):([a-zA-Z]{2})/i', $title->__toString( ), $match ))
 		{
 			$dbr = wfGetDB( DB_MASTER );
 			$topics = array( );
@@ -700,6 +700,7 @@ class PonyDocsExtension
 			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
 			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2] );
 			$pManualTopic = new PonyDocsTopic( $article );
+			$pTopicLanguage = $pManualTopic->getLanguage();
 
 			$manVersionList = $pManualTopic->getProductVersions( );
 			if( !sizeof( $manVersionList ))
@@ -710,7 +711,7 @@ class PonyDocsExtension
 			// Clear all TOC cache entries for each version.
 			if($pManual) {
 				foreach($manVersionList as $version) {
-					PonyDocsTOC::clearTOCCache($pManual, $version, $pProduct);
+					PonyDocsTOC::clearTOCCache($pManual, $version, $pProduct, $pTopicLanguage);
 					PonyDocsProductVersion::clearNAVCache($version);
 				}
 			}
@@ -2033,7 +2034,7 @@ HEREDOC;
 		// Clear all TOC cache entries for each version.
 		if($manual) {
 			foreach($manVersionList as $version) {
-				PonyDocsTOC::clearTOCCache($manual, $version, $product);
+				PonyDocsTOC::clearTOCCache($manual, $version, $product, $topic->getLanguage());
 				PonyDocsProductVersion::clearNAVCache($version);
 			}
 		}

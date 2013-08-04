@@ -212,6 +212,10 @@ class PonyDocsProductManual
 			return null;
 		return self::GetManualByShortName( $productName, $pcs[2] );
 	}
+
+	function getTranslations() {
+		
+	}
 };
 
 /**

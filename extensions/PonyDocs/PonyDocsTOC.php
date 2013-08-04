@@ -478,11 +478,16 @@ class PonyDocsTOC
 		return $secText;
 	}
 
-	static public function clearTOCCache($manual, $version, $product) {
+	static public function clearTOCCache($manual, $version, $product, $languageCode) {
 		error_log("INFO [PonyDocsTOC::clearTOCCache] Deleting cache entry of TOC for product " . $product->getShortName() . " manual " . $manual->getShortName() . ' and version ' . $version->getVersionName());
-		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName();
+		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName() . "-" . $languageCode;
 		$cache = PonyDocsCache::getInstance();
 		$cache->remove($key);
+	}
+
+
+	public function getTranslations( ) {
+
 	}
 }
 

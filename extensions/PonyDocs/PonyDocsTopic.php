@@ -428,21 +428,25 @@ class PonyDocsTopic
 		$dbr = wfGetDB( DB_SLAVE );
 		$revision = $this->pArticle->mRevision;
 
-		if (!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $matches ))
+		if (!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+)(:([^:]+))?/i', $this->pTitle->__toString( ), $matches ))
 			return;
 
 		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
 		$res = $dbr->select( 'categorylinks', 'cl_to',
 							"cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
 
-		$tempLanguages = array();
+		$ponydocs = PonyDocsWiki::getInstance($matches[1]);
+		$current_lang = $ponydocs->getCurrentLanguage();
 
+		$tempLanguages = array();
 		while ( $row = $dbr->fetchObject( $res ))
 		{
 			if( preg_match( '/^L:(.*)/i', $row->cl_to, $match ))
 			{
-				list($product, $manual) = explode(":", $matches[1]);
-				$tempLanguages[$match[1]] = array('name' => $match[1], 'href' => "{$match[1]}/Documentation/{$product}/{$matches[3]}/{$manual}/{$matches[2]}");
+				if ($current_lang == strtolower($match[1]))
+					continue;
+
+				$tempLanguages[$match[1]] = array('name' => $match[1], 'href' => "{$match[1]}/Documentation/{$matches[1]}/{$matches[4]}/{$matches[2]}/{$matches[3]}");
 			}
 		}
 

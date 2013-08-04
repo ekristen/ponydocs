@@ -308,6 +308,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			$toc = new PonyDocsTOC( $pManual, $v, $p, $this->data['selectedLanguage'] );
 			list( $this->data['manualtoc'], $this->data['tocprev'], $this->data['tocnext'], $this->data['tocstart'] ) = $toc->loadContent( );
 			$this->data['toctitle'] = $toc->getTOCPageTitle();
+			$this->data['toctranslations'] = $toc->getTranslations();
 		}
 
 		/**
@@ -610,14 +611,28 @@ class PonyDocsTemplate extends QuickTemplate {
 
 
 	private function createBreadcrumbMenu() {
+		global $wgLanguageNames;
+
 		$breadcrumbs = array();
 
 		$parts = explode(":", $this->globals->wgTitle->__toString());
 
-		if (count($parts) > 5 && $parts[0] == 'Documentation') {
+		$language = array_pop($parts);
+
+		$languageName = $wgLanguageNames[$language];
+
+		$includeLang = false;
+		if ($language != PONYDOCS_LANGUAGE_DEFAULT) {
+			$includeLang = true;
+			$breadcrumbs[] = array('label' => $languageName);
+		}
+
+		if (count($parts) > 4 && $parts[0] == 'Documentation') {
 			$page_title = PonyDocsTopic::FindH1ForTitle( $this->globals->wgTitle->__toString() );
 
 			$parts = array($parts[0], $parts[1], $parts[4], $parts[2], $parts[3]);
+
+			$pieces[] = $language;
 
 			for ($x=0; $x<count($parts); $x++) {
 				if ($x == 2) {
