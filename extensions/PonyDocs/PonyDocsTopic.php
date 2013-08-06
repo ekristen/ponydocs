@@ -63,7 +63,7 @@ class PonyDocsTopic
 		//$this->pArticle->loadContent( );
 		//echo '<pre>' . $article->getContent( ) . '</pre>';
 		$this->pTitle = $article->getTitle( );
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $match))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)?/i', $this->pTitle->__toString( ), $match))
 			$this->mIsDocumentationTopic = true;
 
 		$this->pLanguage = $match[4];
@@ -225,7 +225,6 @@ class PonyDocsTopic
 	static public function FindH1ForTitle( $title )
 	{
 		$article = new Article( Title::newFromText( $title ), 0);
-		$content = $article->loadContent( );
 
 		//$content = preg_replace( '/\<nowiki\>(.*)\<\/nowiki\>/i', '', $article->getContent( ));		
 		if( !preg_match( '/^\s*=(.*)=/D', $article->getContent( ), $matches ))
@@ -415,7 +414,7 @@ class PonyDocsTopic
 	 */
 	public function getBaseTopicName( )
 	{
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $match ))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)?/i', $this->pTitle->__toString( ), $match ))
 		{
 			return sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
 		}
@@ -428,7 +427,7 @@ class PonyDocsTopic
 		$dbr = wfGetDB( DB_SLAVE );
 		$revision = $this->pArticle->mRevision;
 
-		if (!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+)(:([^:]+))?/i', $this->pTitle->__toString( ), $matches ))
+		if (!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)?/i', $this->pTitle->__toString( ), $matches ))
 			return;
 
 		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );

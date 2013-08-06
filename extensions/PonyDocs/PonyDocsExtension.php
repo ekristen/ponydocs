@@ -157,6 +157,7 @@ $wgRevision = '$Revision: 207 $';
  * I'd like to move all of this into PonyDocsExtension;  i.e. have a registerHooks method which does all of this
  * and passes array( $this, 'methodName' ) for each instead of using static methods?
  */
+
 $wgExtensionFunctions[] = 'efPonyDocsSetup';
 $wgExtensionFunctions[] = 'efManualParserFunction_Setup';
 $wgExtensionFunctions[] = 'efVersionParserFunction_Setup';
@@ -219,7 +220,6 @@ function efPonyDocsSetup()
 			// this version isn't available to this user; go away
 			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
-			die("here7");
 			header( "Location: " . $defaultRedirect );
 			exit;
 		}
@@ -424,13 +424,34 @@ function efProductParserFunction_Render(&$parser, $shortName = '', $longName = '
 	}
 
 	$namespace = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
+	$language  = PONYDOCS_LANGUAGE_DEFAULT;
+
+	$ponydocs = PonyDocsWiki::getInstance($shortName);
+
+	global $wgLanguageNames;
+	foreach ($wgLanguageNames as $code => $name) {
+		$lang_links[] = '<li><a href="/'.$namespace.':'.$shortName.':'.$code.'">'.$name.'</a></li>';
+	}
+	$lang_output = implode("\n", $lang_links);
 
 	$output =<<<EOL
 		<div class="product">
 			<h3>{$shortName} ({$longName}) <small>{$parent}</small></h3>
 			<ul class="nav nav-pills">
 				<li><a href="/{$namespace}:{$shortName}:Versions">Manage Versions</a></li>
-				<li><a href="/{$namespace}:{$shortName}:Manuals">Manage Manuals</a></li>
+				<li><a href="/{$namespace}:{$shortName}:Manuals:{$language}">Manage Manuals</a></li>
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown"> Manage Other Languages <b class="caret"></b></a>
+					<ul class="dropdown-menu">
+						<li><a href="#">German</a></li>
+					</ul>
+				</li>
+				<li class="dropdown">
+					<a href="#" class="dropdown-toggle" data-toggle="dropdown">Create New Translation <b class="caret"></b></a>
+					<ul class="dropdown-menu">
+						{$lang_output}
+					</ul>
+				</li>
 			</ul>
 			<p class="muted">{$description}</p>
 			<hr/>
@@ -481,7 +502,7 @@ function efGetTitleFromMarkup($markup = '' )
 
 	$manualShortName = $matches[2];
 	$productShortName = $matches[1];
-print_r($matches); die;
+
 	PonyDocsWiki::getInstance( $productShortName, $matches[4]);
 
 	/**

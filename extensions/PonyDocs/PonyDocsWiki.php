@@ -58,7 +58,7 @@ class PonyDocsWiki
 	 */
 	public function getProductsForTemplate() {
 		$dbr = wfGetDB(DB_SLAVE);
-		$product = PonyDocsProduct::GetProducts();
+		$product = PonyDocsProduct::GetProducts( $this->getCurrentLanguage() );
 		$productAry = array();
 
 		foreach ($product as $p) {

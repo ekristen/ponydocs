@@ -1,5 +1,12 @@
 <?php
 
+function prd($object) {
+	print "<pre>";
+	print_r($object);
+	print "</pre>";
+	die;
+}
+
 /**
  * This is the main web entry point for MediaWiki.
  *

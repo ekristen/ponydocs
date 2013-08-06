@@ -253,6 +253,7 @@ class PonyDocsTOC
 		$selectedProduct = $this->pProduct->getShortName();
 		$selectedVersion = $this->pInitialVersion->getVersionName();
 		$selectedManual = $this->pManual->getShortName();
+		$selectedLanguage = $this->pLanguage;
 
 		// Okay, let's determine if the VERSION that the user is in is latest, 
 		// if so, we should set latest to true.
@@ -263,7 +264,7 @@ class PonyDocsTOC
 		}
 
 		$cache = PonyDocsCache::getInstance();
-		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion . "-" . $this->pLanguage;
+		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion . "-" . $selectedLanguage;
 		$toc = $cache->get($key);
 		if ($toc === null) {
 			// Cache did not exist, let's load our content is build up our cache 
@@ -312,8 +313,8 @@ class PonyDocsTOC
 
 					$title_suffix = preg_replace('/([^' . str_replace(' ', '', Title::legalChars()) . '])/', '', $baseTopic);
 					$title = PONYDOCS_DOCUMENTATION_PREFIX . "$selectedProduct:$selectedManual:$title_suffix";
-					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion($title, $selectedProduct, $this->pLanguage);
-
+					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion($title, $selectedProduct, $selectedLanguage);
+prd($newTitle);
 					/**
 					 * Hide topics which have no content (i.e. have not been created 
 					 * yet) from the user viewing.  
@@ -339,7 +340,7 @@ class PonyDocsTOC
 					}
 
 					$href = str_replace('$1', 
-						"{$this->pLanguage}/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
+						"{$selectedLanguage}/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
 						$wgArticlePath);
 
 					$toc[$idx] = array(
@@ -384,11 +385,12 @@ class PonyDocsTOC
 					$safeVersion = preg_quote($selectedVersion, '#');
 					// Lets be specific and replace the version and not some other part of the URI that might match...
 					$toc[$idx]['link'] = preg_replace(
-						'#^/' . $this->pLanguage . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+						'#^/' . strtoupper($selectedLanguage) . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 							'/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/' . "$safeVersion#",
-						'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
+						'/' . strtoupper($selectedLanguage) . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
 						$toc[$idx]['link'],
 						1);
+
 				}
 			}
 		}
@@ -450,11 +452,6 @@ class PonyDocsTOC
 		 * $obj->start = $start;
 		 * $cache->addKey($tocKey, $obj);
 		 */
-		
-		// Last but not least, get the manual description if there is one.
-		if (preg_match('/{{#manualDescription:([^}]*)}}/', $this->pTOCArticle->mContent, $matches)) {
-			$this->mManualDescription = $matches[1];
-		}
 
 		return array( $toc, $prev, $next, $start );
 	}

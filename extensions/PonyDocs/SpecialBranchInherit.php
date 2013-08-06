@@ -75,7 +75,7 @@ class SpecialBranchInherit extends SpecialPage
 	 * 							  (for individual branch/inherit)
 	 * @returns string JSON representation of all titles requested
 	 */
-	public static function ajaxFetchTopics($productName, $sourceVersion, $targetVersion, $manuals, $forcedTitle = null) {
+	public static function ajaxFetchTopics($productName, $sourceVersion, $targetVersion, $sourceLanguage, $targetLanguage, $manuals, $forcedTitle = null) {
 		PonyDocsProduct::LoadProducts(true);
 		$product = PonyDocsProduct::GetProductByShortName($productName);
 		PonyDocsProductVersion::LoadVersionsForProduct(true, true);
@@ -90,13 +90,13 @@ class SpecialBranchInherit extends SpecialPage
 		// Okay, get manual by name.
 		$manuals = explode(",", $manuals);
 		foreach($manuals as $manualName) {
-			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
+			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName, $sourceLanguage);
 			$result[$manualName] = array();
 			$result[$manualName]['meta'] = array();
 			// Load up meta.
 			$result[$manualName]['meta']['text'] = $manual->getLongName();
 			// See if TOC exists for target version.
-			$result[$manualName]['meta']['toc_exists'] = PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion);
+			$result[$manualName]['meta']['toc_exists'] = PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion, $targetLanguage);
 			$result[$manualName]['sections'] = array();
 			// Got the version and manual, load the TOC.
 			$ponyTOC = new PonyDocsTOC($manual, $sourceVersion, $product, PONYDOCS_LANGUAGE_DEFAULT);
@@ -115,7 +115,7 @@ class SpecialBranchInherit extends SpecialPage
 						$tempEntry = array('title' => $tocItem['title'],
 									'text' => $tocItem['text'],
 									'toctitle' => $tocItem['toctitle'],
-									'conflicts' => PonyDocsBranchInheritEngine::getConflicts($product, $tocItem['title'], $targetVersion) );
+									'conflicts' => PonyDocsBranchInheritEngine::getConflicts($product, $tocItem['title'], $targetVersion, $targetLanguage) );
 						/**
 						 * We want to set to empty, so the UI javascript doesn't 
 						 * bork out on this.
@@ -176,7 +176,7 @@ class SpecialBranchInherit extends SpecialPage
 	 * 								their requested actions.
 	 * @return string Full job log of the process by printing to stdout.
 	 */
-	public static function ajaxProcessRequest($jobID, $productName, $sourceVersion, $targetVersion, $topicActions) {
+	public static function ajaxProcessRequest($jobID, $productName, $sourceVersion, $sourceLanguage, $targetVersion, $targetLanguage, $topicActions) {
 		global $wgScriptPath;
 		ob_start();
 
@@ -189,16 +189,25 @@ class SpecialBranchInherit extends SpecialPage
 			return true;
 		}
 
-		print("Beginning process job for source version: " . $productName . ':' . $sourceVersion . "<br />");
-		print("Target version is: " . $targetVersion . "<br />");
+		print("Beginning process job for source version: " . $productName . ':' . $sourceVersion . ':' . $sourceLanguage . "<br />");
+		print("Product: {$productName}<br/>");
+		print("Source Version: {$sourceVersion}<br/>");
+		print("Source Language: {$sourceLanguage}<br/>");
+		print("Target Version: {$targetVersion}<br />");
+		print("Target Language: {$targetLanguage}<br/>");
 
 		// Enable speed processing to avoid any unnecessary processing on 
 		// new topics created by this tool.
 		PonyDocsExtension::setSpeedProcessing(true);
 
-		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$product = PonyDocsProduct::GetProductByShortName($productName, $sourceLanguage);
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName($productName, $sourceVersion);
 		$targetVersion = PonyDocsProductVersion::GetVersionByName($productName, $targetVersion);
+
+		if ($sourceLanguage != $targetLanguage) {
+			PonyDocsBranchInheritEngine::branchProducts($sourceLanguage, $targetLanguage);
+			PonyDocsBranchInheritEngine::branchManuals($product, $sourceLanguage, $targetLanguage);
+		}
 
 		// Determine how many topics there are to process.
 		$numOfTopics = 0;
@@ -221,20 +230,20 @@ class SpecialBranchInherit extends SpecialPage
 		foreach($topicActions as $manualName => $manualData) {
 			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
 			// Determine if TOC already exists for target version.
-			if(!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion)) {
+			if(!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion, $targetLanguage)) {
 				print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version " . $targetVersion->getVersionName() . "</div>");
 				// Crl eate the toc or inherit.
 				if($manualData['tocAction'] != 'default') {
 					// Then they want to force.
 					if($manualData['tocAction'] == 'forceinherit') {
 						print("<div class=\"normal\">Forcing inheritance of source TOC.</div>");
-						PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
+						PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion, $sourceLanguage);
 						print("<div class=\"normal\">Complete</div>");
 
 					}
 					else if($manualData['tocAction'] == 'forcebranch') {
 						print("<div class=\"normal\">Forcing branch of source TOC.</div>");
-						PonyDocsBranchInheritEngine::branchTOC($product, $manual, $sourceVersion, $targetVersion);
+						PonyDocsBranchInheritEngine::branchTOC($product, $manual, $sourceVersion, $sourceLanguage, $targetVersion, $targetLanguage);
 						print("<div class=\"normal\">Complete</div>");
 					}
 				}
@@ -245,7 +254,7 @@ class SpecialBranchInherit extends SpecialPage
 						// target version to the category tags.
 						try {
 							print("<div class=\"normal\">Attempting to add target version to existing source version TOC.</div>");
-							PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion);
+							PonyDocsBranchInheritEngine::addVersionToTOC($product, $manual, $sourceVersion, $targetVersion, $sourceLanguage);
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -261,7 +270,7 @@ class SpecialBranchInherit extends SpecialPage
 									$addData[$sectionName][] = $topic['toctitle'];
 								}
 							}
-							PonyDocsBranchInheritEngine::createTOC($product, $manual, $targetVersion, $addData);
+							PonyDocsBranchInheritEngine::createTOC($product, $manual, $targetVersion, $targetLanguage, $addData);
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -281,7 +290,7 @@ class SpecialBranchInherit extends SpecialPage
 								}
 							}
 						}
-						PonyDocsBranchInheritEngine::addCollectionToTOC($product, $manual, $targetVersion, $addData);
+						PonyDocsBranchInheritEngine::addCollectionToTOC($product, $manual, $targetVersion, $targetLanguage, $addData);
 						print("<div class=\"normal\">Complete</div>");
 					} catch(Exception $e) {
 						print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -307,7 +316,7 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "branchpurge") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and remove existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], true, false, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $targetLanguage, $sectionName, $topic['text'], true, false, true);
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -316,7 +325,7 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "branch") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . "</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], false, true, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $targetLanguage, $sectionName, $topic['text'], false, true, true);
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -325,7 +334,7 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "branchsplit") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and split from existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], false, true, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::branchTopic($topic['title'], $targetVersion, $targetLanguage, $sectionName, $topic['text'], false, true, true);
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -507,6 +516,19 @@ class SpecialBranchInherit extends SpecialPage
 					<?php
 				}
 			?>
+
+			<h2>Choose a Source Language</h2>
+			<?php
+				global $wgLanguageNames;
+				$languages = PonyDocsProduct::getTranslations($forceProduct);
+			?>
+			<select name="language" id="languageselect_sourcelanguage">
+				<?php foreach ($languages as $language): ?>
+				<option value="<?php print $language; ?>"><?php print $wgLanguageNames[$language]; ?></option>
+				<?php endforeach; ?>
+			</select>
+
+			
 			<h2>Choose a Target Version</h2>
 			<select name="version" id="versionselect_targetversion">
 				<?php
@@ -517,6 +539,26 @@ class SpecialBranchInherit extends SpecialPage
 				}
 				?>
 			</select>
+
+			<h2>Choose a Target Language</h2>
+			<select name="language" id="languageselect_targetlanguage">
+				<optgroup label="Existing Languages">
+					<?php foreach ($languages as $language): 
+						$selected = '';
+						if (PONYDOCS_LANGUAGE_DEFAULT == $language) {
+							$selected = 'selected="selected"';
+						}
+					?>
+					<option value="<?php print $language; ?>"<?php print $selected; ?>><?php print $wgLanguageNames[$language]; ?></option>
+					<?php endforeach; ?>
+				</optgroup>
+				<optgroup label="Available Languages">
+					<?php foreach ($wgLanguageNames as $code => $name): ?>
+					<option value="<?php print $code; ?>"><?php print $name; ?></option>
+					<?php endforeach; ?>
+				</optgroup>
+			</select>
+
 			<p>
 			<input type="button" id="versionselect_submit" class="btn btn-primary" value="Continue to Manuals" />
 			</p>
@@ -535,6 +577,12 @@ class SpecialBranchInherit extends SpecialPage
 			<p class="summary">
 				<strong>Source Version:</strong> <span class="sourceversion"></span> <strong>Target Version:</strong> <span class="targetversion"></span>
 			</p>
+			<p class="summary">
+				<strong>Source Language:</strong> <span class="sourcelanguage"></span> <strong>Target Language:</strong> <span class="targetlanguage"></span>
+			</p>
+
+			<div id="branchonly" class="alert alert-warning hide">You can only branch when the source and target languages!</div>
+
 			<h2>Choose Manuals To Branch/Inherit From</h2>	
 			<div id="manualselect_manuals">
 
@@ -568,6 +616,10 @@ class SpecialBranchInherit extends SpecialPage
 			<p class="summary">
 			<strong>Source Version:</strong> <span class="sourceversion"></span> <strong>Target Version:</strong> <span class="targetversion"></span>
 			</p>
+			<p class="summary">
+				<strong>Source Language:</strong> <span class="sourcelanguage"></span> <strong>Target Language:</strong> <span class="targetlanguage"></span>
+			</p>
+
 
 			<h1>Specify Topic Actions</h1>
 			<div class="branchcontainer">
@@ -581,6 +633,10 @@ class SpecialBranchInherit extends SpecialPage
 			<p class="summary">
 				<strong>Source Version:</strong> <span class="sourceversion"></span> <strong>Target Version:</strong> <span class="targetversion"></span>
 			</p>
+			<p class="summary">
+				<strong>Source Language:</strong> <span class="sourcelanguage"></span> <strong>Target Language:</strong> <span class="targetlanguage"></span>
+			</p>
+
 
 			<h2>Process Complete</h2>
 			The following is the log of the processed job.  Look it over for any potential issues that may have 
