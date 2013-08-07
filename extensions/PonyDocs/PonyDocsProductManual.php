@@ -166,9 +166,9 @@ class PonyDocsProductManual
 	 * @static
 	 * @returns array
 	 */
-	static public function GetDefinedManuals( $productName )
+	static public function GetDefinedManuals( $productName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		self::LoadManualsForProduct( $productName );
+		self::LoadManualsForProduct( $productName, true, $language );
 		return self::$sDefinedManualList[$productName];
 	}
 

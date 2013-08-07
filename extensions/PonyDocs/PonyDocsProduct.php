@@ -209,7 +209,7 @@ class PonyDocsProduct
 	 */
 	static public function GetProducts( $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		return self::LoadProducts( $language );
+		return self::LoadProducts( true, $language );
 	}
 
 	/**
@@ -220,7 +220,7 @@ class PonyDocsProduct
 	 */
 	static public function GetDefinedProducts( $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		self::LoadProducts( $language );
+		self::LoadProducts( true, $language );
 		return self::$sDefinedProductList;
 	}
 
@@ -304,9 +304,9 @@ class PonyDocsProduct
 	 */
 	static public function GetProductByShortName( $shortName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		PonyDocsProduct::LoadProducts( $language );
+		PonyDocsProduct::LoadProducts( true, $language );
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $shortName );
-		if( self::IsProduct( $convertedName ))
+		if( self::IsProduct( $convertedName, $language ))
 			return self::$sDefinedProductList[$convertedName];
 		return null;
 	}
@@ -322,7 +322,7 @@ class PonyDocsProduct
 	{
 		// We no longer specify to reload the product data, because that's just 
 		// insanity.
-		PonyDocsProduct::LoadProducts( $language );
+		PonyDocsProduct::LoadProducts( true, $language );
 		// Should just force our products to load, just in case.
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $shortName );
 		return isset( self::$sDefinedProductList[$convertedName] );
@@ -360,7 +360,7 @@ class PonyDocsProduct
 		global $wgUser;
 
 		$groups = $wgUser->getGroups();
-		self::LoadProducts($language);
+		self::LoadProducts( true, $language);
 
 		/**
 		 * Do we have the session var and is it non-zero length?  Could also check if valid here.

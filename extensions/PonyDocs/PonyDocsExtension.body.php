@@ -1895,7 +1895,7 @@ HEREDOC;
 			$targetProduct = $match[3];
 			$targetManual = $match[6];
 			$targetVersion = $match[5];
-			$targetLanguage = !empty($match[2]) ? $match[2] : PONYDOCS_LANGUAGE_DEFAULT;
+			$targetLanguage = !empty($match[2]) ? strtolower($match[2]) : PONYDOCS_LANGUAGE_DEFAULT;
 
 			$p = PonyDocsProduct::GetProductByShortName($targetProduct, $targetLanguage);
 
@@ -1904,10 +1904,9 @@ HEREDOC;
 				return false;
 			}
 
-
 			// User wants to find first topic in a requested manual.
 			// Load up versions
-			PonyDocsProductVersion::LoadVersionsForProduct($targetProduct, $targetLanguage);
+			PonyDocsProductVersion::LoadVersionsForProduct($targetProduct);
 
 			// Determine version
 			if($targetVersion == '') {
@@ -1927,9 +1926,10 @@ HEREDOC;
 				header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
 				die();
 			}
+
 			// Okay, the version is valid, let's set the user's version.
 			PonyDocsProductVersion::SetSelectedVersion($targetProduct, $ver->getVersionName());
-			PonyDocsProductManual::LoadManualsForProduct($targetProduct, $targetLanguage);
+			PonyDocsProductManual::LoadManualsForProduct($targetProduct, true, $targetLanguage);
 			$man = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual, $targetLanguage);
 			if(!$man) {
 				// Rewrite to Main documentation

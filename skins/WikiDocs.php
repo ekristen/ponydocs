@@ -479,13 +479,14 @@ EOL;
 
 
 	function htmlProductManuals() {
-		$product = PonyDocsProduct::GetProductByShortName($this->data['selectedProduct']);
-		$manuals = PonyDocsProductManual::GetDefinedManuals($this->data['selectedProduct'], true);
+		$product = PonyDocsProduct::GetProductByShortName($this->data['selectedProduct'], $this->data['selectedLanguage']);
+		$manuals = PonyDocsProductManual::GetDefinedManuals($this->data['selectedProduct'], $this->data['selectedLanguage']);
 		$version = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion']);
+		$language = $this->data['selectedLanguage'];
 
 		$nomv = true;
 		foreach ($manuals as $manual) {
-			$toc = new PonyDocsTOC($manual, $version, $product);
+			$toc = new PonyDocsTOC($manual, $version, $product, $language);
 			$toc_versions = $toc->getVersions();
 			if (!empty($toc_versions))
 				$nomv = false;
@@ -507,11 +508,18 @@ EOL;
 			if (empty($toc_versions))
 				continue;
 
+			if ($this->data['selectedLanguage'] != PONYDOCS_LANGUAGE_DEFAULT) {
+				$href = "/".strtoupper($this->data['selectedLanguage'])."/".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."/{$this->data['selectedProduct']}/{$version->getVersionName()}/{$manual->getShortName()}";
+			}
+			else {
+				$href = "/".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."/{$this->data['selectedProduct']}/{$version->getVersionName()}/{$manual->getShortName()}";
+			}
+
 			$items[] =<<<EOL
 				<li class="span6 pull-left">
 					<div class="thumbnail">
 						<div class="caption">
-							<h3><a href="/Documentation/{$this->data['selectedProduct']}/{$version->getVersionName()}/{$manual->getShortName()}">{$manual->getLongName()}</a></h3>
+							<h3><a href="{$href}">{$manual->getLongName()}</a></h3>
 							<p>{$manual->getDescription()}</p>
 						</div>
 					</div>
