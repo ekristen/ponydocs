@@ -188,6 +188,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 	public function prepareDocumentation() {
 		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser, $wgPonyDocsLanguage;
+
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!
 		 */
