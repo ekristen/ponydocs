@@ -155,12 +155,12 @@ class PonyDocsWiki
 	 *
 	 * @return array
 	 */
-	public function getManualsForProduct( $product )
+	public function getManualsForProduct( $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		PonyDocsProductVersion::LoadVersionsForProduct($product); 	// Dependency
-		PonyDocsProductVersion::getSelectedVersion($product);
-		PonyDocsProductManual::LoadManualsForProduct($product);	// Dependency
-		$manuals = PonyDocsProductManual::GetManuals( $product );
+		PonyDocsProductVersion::LoadVersionsForProduct($product, false, $language); 	// Dependency
+		PonyDocsProductVersion::getSelectedVersion($product, $language);
+		PonyDocsProductManual::LoadManualsForProduct($product, false, $language);	// Dependency
+		$manuals = PonyDocsProductManual::GetManuals( $product, $language );
 
 		$out = array( );
 		foreach( $manuals as $m )

@@ -67,6 +67,7 @@ class PonyDocsTemplate extends QuickTemplate {
 	function preSetup() {
 		global $wgUser, $wgExtraNamespaces, $wgTitle, $wgArticlePath, $IP;
 		global $wgRequest, $wgRevision, $action, $wgRequest, $wgSitename;
+		global $wgPonyDocsLanguage;
 
 		$this->globals = new stdClass();
 		$this->globals->wgRequest = $wgRequest;
@@ -81,10 +82,10 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		$this->action = $action;
 
-		PonyDocsProduct::LoadProducts();
-		$this->data['selectedProduct'] = PonyDocsProduct::GetSelectedProduct( );
+		PonyDocsProduct::LoadProducts(false, $wgPonyDocsLanguage);
+		$this->data['selectedProduct'] = PonyDocsProduct::GetSelectedProduct( $wgPonyDocsLanguage );
 		PonyDocsProductVersion::LoadVersionsForProduct($this->data['selectedProduct']);
-		PonyDocsProductManual::LoadManualsForProduct($this->data['selectedProduct']);
+		PonyDocsProductManual::LoadManualsForProduct($this->data['selectedProduct'], false, $wgPonyDocsLanguage );
 
 		$this->ponydocs = $ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
 
@@ -92,7 +93,9 @@ class PonyDocsTemplate extends QuickTemplate {
 		$this->data['versions'] = $ponydocs->getVersionsForProduct( $this->data['selectedProduct'] );
 		$this->data['namespaces'] = $wgExtraNamespaces;
 		$this->data['selectedVersion'] = PonyDocsProductVersion::GetSelectedVersion( $this->data['selectedProduct'] );
-		$this->data['pVersion'] = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion']);
+		$this->data['pVersion'] = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion'], $wgPonyDocsLanguage);
+		$this->data['selectedLanguage'] = $wgPonyDocsLanguage;
+
 		// TODO: FIX -- Disabled due to wgScript and thispage not being set?
 		//$this->data['versionurl'] = $this->data['wgScript'] . '?title=' . $this->data['thispage'] . '&action=changeversion';
 
@@ -184,14 +187,12 @@ class PonyDocsTemplate extends QuickTemplate {
 
 
 	public function prepareDocumentation() {
-		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser;
+		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser, $wgPonyDocsLanguage;
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!
 		 */
-		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
-		$this->data['manuals'] = $ponydocs->getManualsForProduct( $this->data['selectedProduct'] );
-
-		$this->data['selectedLanguage'] = $ponydocs->getCurrentLanguage();
+		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'], $wgPonyDocsLanguage );
+		$this->data['manuals'] = $ponydocs->getManualsForProduct( $this->data['selectedProduct'] , $wgPonyDocsLanguage );
 
 		/**
 		 * Adjust content actions as needed, such as add 'view all' link.

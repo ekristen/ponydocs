@@ -21,7 +21,9 @@ define('PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation');
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_ID', 100);
 
 define('PONYDOCS_LANGUAGE_DEFAULT', 'en'); 
+// Automatically translate WikiDocs UI into documentations language format.
 define('PONYDOCS_LANGUAGE_AUTOUI', true);
+// Always include language in URL, to include the default language.
 define('PONYDOCS_LANGUAGE_ALWAYS', false);
 
 define('PONYDOCS_CACHE_ENABLED', true);

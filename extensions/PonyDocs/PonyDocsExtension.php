@@ -61,6 +61,8 @@ $ponyDocsProductsList[] = '';
 // Legacy -- we'll set it to the first product.
 define('PONYDOCS_DEFAULT_PRODUCT', $ponyDocsProductsList[0]);
 
+$wgPonyDocsLanguge = PONYDOCS_LANGUAGE_DEFAULT;
+
 // Setup Permissions
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['read'] 			= true;
 $wgGroupPermissions[PONYDOCS_EMPLOYEE_GROUP]['edit'] 			= true;

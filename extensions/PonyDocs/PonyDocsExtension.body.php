@@ -48,9 +48,10 @@ class PonyDocsExtension
 		global $wgScriptPath;
 		global $wgHooks, $wgArticlePath;
 		global $wgLanguageCode;
+		global $wgUser;
+		global $wgPonyDocsLanguage;
 
 		$this->setPathInfo( );
-
 
 		if (preg_match('/^'. str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([a-zA-Z]{2})/', $_SERVER['PATH_INFO'], $match)) {
 			// do nothing!
@@ -82,10 +83,56 @@ class PonyDocsExtension
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
 		}
 
-		if (PONYDOCS_LANGUAGE_AUTOUI == true) {
-			//$wgLanguageCode = isset($match[2]) && !empty($match[2]) ? strtolower($match[2]) : PONYDOCS_LANGUAGE_DEFAULT;
+
+		/**
+		 * From here on is language related
+		 */
+		$languageCode = PONYDOCS_LANGUAGE_DEFAULT;
+		$language_in_url = false;
+		if (isset($_REQUEST['title'])) {
+			$title_match = $_REQUEST['title'];
+		}
+		else {
+			$title_match = $_SERVER['PATH_INFO'];
 		}
 
+		if (preg_match('/^'.PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE.':([a-zA-Z]{2})$/', $title_match, $match)) {
+			$languageCode = $match[1];
+			$language_in_url = true;
+		}
+		else if (preg_match('/^'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.':(.*)'.PONYDOCS_PRODUCTMANUAL_SUFFIX.':([a-zA-Z]{2})$/', $title_match, $match)) {
+			$languageCode = $match[2];
+			$language_in_url = true;
+		}
+		else if (preg_match('/^'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.':(.*):(.*):(.*):(.*):([a-zA-Z]{2})$/' , $title_match, $match)) {
+			$languageCode = $match[5];
+			$language_in_url = true;
+		}
+		else {
+			prd('we should not have gotten here');
+		}
+
+		if (PONYDOCS_LANGUAGE_AUTOUI == true) {
+			$wgLanguageCode = $languageCode;
+		}
+
+		$wgPonyDocsLanguage = $languageCode;
+
+		/**
+		 * If we are in the default language and the 
+		 * configuration is set to not always include
+		 * the language in the URL, and the current path
+		 * includes a language code, perform 301 redirect
+		 * 
+		 * This exists mainly for SEO purposes.
+		 */
+		if ($languageCode == PONYDOCS_LANGUAGE_DEFAULT && PONYDOCS_LANGUAGE_ALWAYS === false && $language_in_url == true) {
+			$new_location = str_replace($match[1], '', $_SERVER['PATH_INFO']);
+			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			header("HTTP/1.1 301 Moved Permanently");
+			header("Location: {$new_location}");
+			die();
+		}
 	}
 
 	/**
