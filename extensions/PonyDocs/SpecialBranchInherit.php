@@ -51,10 +51,10 @@ class SpecialBranchInherit extends SpecialPage
 	 * 					  manuals for.
  	 * @returns string JSON representation of the manuals
 	 */
-	public static function ajaxFetchManuals($product, $ver) {
+	public static function ajaxFetchManuals($product, $ver, $language) {
 		PonyDocsProductVersion::LoadVersionsForProduct($product);
 		PonyDocsProductVersion::SetSelectedVersion($product, $ver);
-		$manuals = PonyDocsProductManual::GetManuals($product);
+		$manuals = PonyDocsProductManual::GetManuals($product, $language);
 		$result = array();
 		foreach($manuals as $manual) {
 			$result[] = array("shortname" => $manual->getShortName(),
@@ -76,8 +76,8 @@ class SpecialBranchInherit extends SpecialPage
 	 * @returns string JSON representation of all titles requested
 	 */
 	public static function ajaxFetchTopics($productName, $sourceVersion, $targetVersion, $sourceLanguage, $targetLanguage, $manuals, $forcedTitle = null) {
-		PonyDocsProduct::LoadProducts(true);
-		$product = PonyDocsProduct::GetProductByShortName($productName);
+		PonyDocsProduct::LoadProducts( $sourceLanguage );
+		$product = PonyDocsProduct::GetProductByShortName($productName, $sourceLanguage);
 		PonyDocsProductVersion::LoadVersionsForProduct(true, true);
 		$sourceVersion = PonyDocsProductVersion::GetVersionByName($productName, $sourceVersion);
 		$targetVersion = PonyDocsProductVersion::GetVersionByName($productName, $targetVersion);
@@ -520,11 +520,12 @@ class SpecialBranchInherit extends SpecialPage
 			<h2>Choose a Source Language</h2>
 			<?php
 				global $wgLanguageNames;
+				global $wgISO639LanguageCodes;
 				$languages = PonyDocsProduct::getTranslations($forceProduct);
 			?>
 			<select name="language" id="languageselect_sourcelanguage">
 				<?php foreach ($languages as $language): ?>
-				<option value="<?php print $language; ?>"><?php print $wgLanguageNames[$language]; ?></option>
+				<option value="<?php print $language; ?>"><?php print $wgISO639LanguageCodes[$language]; ?></option>
 				<?php endforeach; ?>
 			</select>
 
@@ -549,11 +550,11 @@ class SpecialBranchInherit extends SpecialPage
 							$selected = 'selected="selected"';
 						}
 					?>
-					<option value="<?php print $language; ?>"<?php print $selected; ?>><?php print $wgLanguageNames[$language]; ?></option>
+					<option value="<?php print $language; ?>"<?php print $selected; ?>><?php print $wgISO639LanguageCodes[$language]; ?></option>
 					<?php endforeach; ?>
 				</optgroup>
 				<optgroup label="Available Languages">
-					<?php foreach ($wgLanguageNames as $code => $name): ?>
+					<?php foreach ($wgISO639LanguageCodes as $code => $name): ?>
 					<option value="<?php print $code; ?>"><?php print $name; ?></option>
 					<?php endforeach; ?>
 				</optgroup>

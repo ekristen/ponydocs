@@ -106,7 +106,7 @@ class PonyDocsWiki
 		$out = array( );
 		foreach( $versions as $v )
 		{
-			$out[] = array( 'name' => $v->getVersionName( ), 'href' => str_replace( '$1', 'Category:V:' . $v->getProductName() . ':' . $v->getVersionName( ), $wgArticlePath ));
+			$out[] = array( 'name' => $v->getVersionName( ), 'href' => str_replace( '$1', 'Category:V:' . $v->getProductName() . ':' . $v->getVersionName( ) . ':' . $pTopic->getLanguage(), $wgArticlePath ));
 		}
 
 		return $out;

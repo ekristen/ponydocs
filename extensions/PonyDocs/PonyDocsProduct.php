@@ -391,7 +391,15 @@ class PonyDocsProduct
 		if (PONYDOCS_SESSION_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] setting selected product to $p");}
 		return $p;
 	}
-	
+
+	static public function SetSelectedLanguage( $language = PONYDOCS_LANGUAGE_DEFAULT )
+	{
+		$_SESSION['wsLanguage'] = $language;
+		return $language;
+	}
+
+	static public function GetSelectedLanguage( ) { }
+
 	/**
 	 * Return an array of child products for a given product
 	 * 

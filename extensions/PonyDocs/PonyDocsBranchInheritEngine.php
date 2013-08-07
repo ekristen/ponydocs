@@ -115,7 +115,7 @@ class PonyDocsBranchInheritEngine {
 		// from the existing Content, if exists, and put into the new content.
 		// So let's now remove it form the original content
 		foreach($newVersions as $tempVersion) {
-			$existingContent = preg_replace("/\[\[Category:V:" . $productName . ":" . $tempVersion . "\]\]/", "", $existingContent);
+			$existingContent = preg_replace("/\[\[Category:V:" . $productName . ":" . $tempVersion . ":" . $language . "\]\]/", "", $existingContent);
 		}
 		// Now let's do the edit on the original content.
 		$wgTitle = $existingTitle;
@@ -125,7 +125,7 @@ class PonyDocsBranchInheritEngine {
 		$newContent = preg_replace("/\[\[Category:V:([^\]]*)]]/", "", $newContent);
 		// add new category tags to new content
 		foreach($newVersions as $version) {
-			$newContent .= "[[Category:V:" . $productName . ":" . $version . "]]";
+			$newContent .= "[[Category:V:" . $productName . ":" . $version . ":" . $language . "]]";
 		}
 		$newContent .= "\n";
 		// doEdit on new article
@@ -223,7 +223,7 @@ class PonyDocsBranchInheritEngine {
 	 */
 	static public function TOCExists($product, $manual, $version, $language = PONYDOCS_LANGUAGE_DEFAULT) {
 		$dbr = wfGetDB(DB_SLAVE);
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':' . $version->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower($product->getShortName()) . ':' . strtolower($manual->getShortName())) . "toc%:".$language."'";
+		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':' . $version->getVersionName() . ':' . $language) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower($product->getShortName()) . ':' . strtolower($manual->getShortName())) . "toc%:".$language."'";
 		$res = $dbr->query($query, __METHOD__);
 
 		if($res->numRows()) {
@@ -258,11 +258,11 @@ class PonyDocsBranchInheritEngine {
 		$oldContent = $content = $article->getContent();
 
 		// Remove old Version from old TOC (if exists)
-		preg_match_all("/\[\[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionName() . "\]\]/", $content, $matches);
+		preg_match_all("/\[\[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionName() . ':' . $targetLanguage . "\]\]/", $content, $matches);
 		foreach($matches[0] as $match) {
 			$oldContent = str_replace($match, "", $oldContent);
 		}
-		$article->doEdit($oldContent, "Removed version " . $product->getShortName() . ':' . $targetVersion->getVersionName(), EDIT_UPDATE);
+		$article->doEdit($oldContent, "Removed version " . $product->getShortName() . ':' . $targetVersion->getVersionName() . ':' . $targetLanguage, EDIT_UPDATE);
 
 		// Now do the TOC for the new version
 		if(self::TOCExists($product, $manual, $targetVersion, $targetLanguage)) {
@@ -279,8 +279,9 @@ class PonyDocsBranchInheritEngine {
 
 		// Remove old versions from and add new version to new TOC
 		preg_match_all("/\[\[Category:V:[^\]]*\]\]/", $content, $matches);
+		error_log(print_r($matches, true));
 		$lastTag = $matches[0][count($matches[0]) - 1]; // identify the last of the old tags
-		$newVersionTag = "[[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionName() . "]]"; // make the new tag
+		$newVersionTag = "[[Category:V:" . $product->getShortName() . ':' . $targetVersion->getVersionName() . ':' . $targetLanguage . "]]"; // make the new tag
 		foreach ($matches[0] as $match) {
 			if ($match != $lastTag) { // delete tags that aren't the last tag
 				$content = str_replace($match, "", $content);
@@ -317,7 +318,7 @@ class PonyDocsBranchInheritEngine {
 			throw new Exception("TOC Already exists.");
 		}
 		// New TOC.  Create empty content.
-		$newContent = "\n\n[[Category:V:" . $product->getShortName() . ":" . $version->getVersionName() . "]]";
+		$newContent = "\n\n[[Category:V:" . $product->getShortName() . ":" . $version->getVersionName() . ":" . $language . "]]";
 		$newArticle->doEdit($newContent, "Created TOC For Version: " . $product->getShortName() . ":" . $version->getVersionName() . " (Language: {$language})", EDIT_NEW);
 		PonyDocsExtension::ClearNavCache();
 		return $title;
@@ -347,8 +348,8 @@ class PonyDocsBranchInheritEngine {
 		$content = $article->getContent();
 		preg_match_all("/\[\[Category:V:[^\]]*\]\]/", $content, $matches);
 		$lastTag = $matches[0][count($matches[0]) - 1];
-		$content = str_replace($lastTag, $lastTag . "[[Category:V:" . $product->getShortName() . ':' . $newVersion->getVersionName() . "]]", $content);
-		$article->doEdit($content, "Added version " . $product->getShortName() . ':' . $version->getVersionName(), EDIT_UPDATE);
+		$content = str_replace($lastTag, $lastTag . "[[Category:V:" . $product->getShortName() . ':' . $newVersion->getVersionName() . ':' . $language . "]]", $content);
+		$article->doEdit($content, "Added version " . $product->getShortName() . ':' . $version->getVersionName() . ':' . $language, EDIT_UPDATE);
 		PonyDocsExtension::ClearNavCache();
 		return true;
 	}
@@ -549,7 +550,7 @@ class PonyDocsBranchInheritEngine {
 		$productName = $match[1];
 		$manual = $match[2];
 		$title = $match[3];
-		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':' . $targetVersion->getVersionName()) . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode(strtolower(PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manual . ":" . $title)) . ":%:".$targetLanguage."'";
+		$query = "SELECT cl_sortkey FROM categorylinks WHERE cl_to = 'V:" . $dbr->strencode($product->getShortName() . ':' . $targetVersion->getVersionName()) . ':' . $targetLanguage . "' AND LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode(strtolower(PONYDOCS_DOCUMENTATION_PREFIX . $productName . ":" . $manual . ":" . $title)) . ":%:".$targetLanguage."'";
 		$res = $dbr->query($query, __METHOD__);
 
 		if($res->numRows()) {

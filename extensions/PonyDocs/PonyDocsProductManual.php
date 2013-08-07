@@ -136,7 +136,7 @@ class PonyDocsProductManual
 			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2], $m[3], $language );
 			self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
 
-			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
+			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName), $language);
 
 			if( !$res->numRows( )) {
 				continue;
@@ -154,9 +154,10 @@ class PonyDocsProductManual
 	 * @static
 	 * @return array
 	 */
-	static public function GetManuals( $productName )
+	static public function GetManuals( $productName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		return self::LoadManualsForProduct( $productName );
+		
+		return self::LoadManualsForProduct( $productName, true, $language );
 	}
 
 	/**

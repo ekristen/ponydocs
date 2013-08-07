@@ -60,13 +60,14 @@ class PonyDocsTopic
 	public function __construct( Article &$article )
 	{
 		$this->pArticle = $article;
-		//$this->pArticle->loadContent( );
-		//echo '<pre>' . $article->getContent( ) . '</pre>';
 		$this->pTitle = $article->getTitle( );
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)?/i', $this->pTitle->__toString( ), $match))
-			$this->mIsDocumentationTopic = true;
 
-		$this->pLanguage = $match[4];
+
+		if (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(), $matches)) {
+			$this->mIsDocumentationTopic = true;
+		}
+
+		$this->pLanguage = $matches[5];
 	}
 
 	/**
@@ -165,13 +166,14 @@ class PonyDocsTopic
 
 		while ( $row = $dbr->fetchObject( $res ))
 		{
-			if( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ))
+			if( preg_match( '/^v:(.*):(.*):(.*)/i', $row->cl_to, $match ))
 			{
 				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
 				if( $v )
 					$tempVersions[] = $v;
 			}
 		}
+
 		// Sort by Version, by doing a natural sort
 		// Also remove any duplicates.
 		/// FIXME - what is this really doing? tempVersions index is int per above code!
@@ -203,7 +205,7 @@ class PonyDocsTopic
 
 		$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
 			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%:".$language."'",
-					"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ), __METHOD__ );
+					"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . ':' . $language . "'" ), __METHOD__ );
 
 		if(!$res->numRows( ))
 			return false;
@@ -424,28 +426,33 @@ class PonyDocsTopic
 	
 	
 	public function getTranslations( ) {
+		global $wgISO639LanguageCodes;
 		$dbr = wfGetDB( DB_SLAVE );
 		$revision = $this->pArticle->mRevision;
 
 		if (!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)?/i', $this->pTitle->__toString( ), $matches ))
 			return;
 
-		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
-		$res = $dbr->select( 'categorylinks', 'cl_to',
-							"cl_sortkey = '" . $dbr->strencode(  $this->pTitle->__toString( )) . "'", __METHOD__ );
-
 		$ponydocs = PonyDocsWiki::getInstance($matches[1]);
 		$current_lang = $ponydocs->getCurrentLanguage();
+
+		$new_title = str_replace(":{$current_lang}", "", $this->pTitle->__toString());
+
+		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
+		$res = $dbr->select( 'categorylinks', 'cl_to',
+							"cl_sortkey LIKE '" . $dbr->strencode( $new_title ) . "%'", __METHOD__ );
 
 		$tempLanguages = array();
 		while ( $row = $dbr->fetchObject( $res ))
 		{
-			if( preg_match( '/^L:(.*)/i', $row->cl_to, $match ))
+			if( preg_match( '/^V:(.*):(.*):(.*)/i', $row->cl_to, $match ))
 			{
-				if ($current_lang == strtolower($match[1]))
+				if ($current_lang == strtolower($match[3]))
 					continue;
 
-				$tempLanguages[$match[1]] = array('name' => $match[1], 'href' => "{$match[1]}/Documentation/{$matches[1]}/{$matches[4]}/{$matches[2]}/{$matches[3]}");
+				$upperlang = strtoupper($match[3]);
+
+				$tempLanguages[$match[3]] = array('name' => $wgISO639LanguageCodes[$match[3]], 'href' => "{$upperlang}/Documentation/{$matches[1]}/{$matches[4]}/{$matches[2]}/{$matches[3]}");
 			}
 		}
 

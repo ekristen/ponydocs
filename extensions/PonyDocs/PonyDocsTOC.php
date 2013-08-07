@@ -147,7 +147,7 @@ class PonyDocsTOC
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array( 	
 					"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( strtolower( $this->pManual->getShortName( ))) . "toc%:".$this->pLanguage."'",
-					"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( $this->pInitialVersion->getVersionName( )) . "'" ),
+					"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( $this->pInitialVersion->getVersionName( )) . ':' . $this->pLanguage . "'" ),
 					__METHOD__ );
 
 		if( !$res->numRows( ))
@@ -162,7 +162,7 @@ class PonyDocsTOC
 		$res = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $mTOCPageTitle ) . "'", __METHOD__ );
 		while( $row = $dbr->fetchObject( $res ))
 		{
-			if( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ))
+			if( preg_match( '/^v:(.*):(.*):(.*)/i', $row->cl_to, $match ))
 			{
 				$addV = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
 				if( $addV )
@@ -314,7 +314,7 @@ class PonyDocsTOC
 					$title_suffix = preg_replace('/([^' . str_replace(' ', '', Title::legalChars()) . '])/', '', $baseTopic);
 					$title = PONYDOCS_DOCUMENTATION_PREFIX . "$selectedProduct:$selectedManual:$title_suffix";
 					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion($title, $selectedProduct, $selectedLanguage);
-prd($newTitle);
+
 					/**
 					 * Hide topics which have no content (i.e. have not been created 
 					 * yet) from the user viewing.  
@@ -339,8 +339,12 @@ prd($newTitle);
 						$h1 = $newTitle;
 					}
 
+					$languageExtra = '';
+					if (PONYDOCS_LANGUAGE_ALWAYS == true || $selectedLanguage != PONYDOCS_LANGUAGE_DEFAULT)
+						$languageExtra = strtoupper("{$selectedLanguage}/");
+
 					$href = str_replace('$1', 
-						"{$selectedLanguage}/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
+						$languageExtra . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
 						$wgArticlePath);
 
 					$toc[$idx] = array(
@@ -357,9 +361,11 @@ prd($newTitle);
 				}
 				$idx++;
 			}
+
 			if (!$toc[$section]['subs']) {
 				unset( $toc[$section] );
 			}
+
 			// Okay, let's store in our cache.
 			$cache->put($key, $toc, time() + 3600);
 		}
@@ -384,10 +390,14 @@ prd($newTitle);
 				if ($latest) {
 					$safeVersion = preg_quote($selectedVersion, '#');
 					// Lets be specific and replace the version and not some other part of the URI that might match...
+					$languageExtra = '';
+					if (PONYDOCS_LANGUAGE_ALWAYS == true || $selectedLanguage != PONYDOCS_LANGUAGE_DEFAULT)
+						$languageExtra = strtoupper("{$selectedLanguage}/");
+
 					$toc[$idx]['link'] = preg_replace(
-						'#^/' . strtoupper($selectedLanguage) . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+						'#^/' . $languageExtra . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 							'/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/' . "$safeVersion#",
-						'/' . strtoupper($selectedLanguage) . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
+						'/' . $languageExtra . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
 						$toc[$idx]['link'],
 						1);
 

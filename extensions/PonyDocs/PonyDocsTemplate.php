@@ -618,7 +618,12 @@ class PonyDocsTemplate extends QuickTemplate {
 		$parts = explode(":", $this->globals->wgTitle->__toString());
 
 		if (count($parts) > 1) {
-			$language = array_pop($parts);
+			if (preg_match('/^([a-zA-Z]{2})$/', $parts[count($parts)-1], $match)) {
+				$language = array_pop($parts);
+			}
+			else {
+				$language = PONYDOCS_LANGUAGE_DEFAULT;
+			}
 		} else {
 			$sparts = explode("/", $this->globals->wgTitle->__toString());
 

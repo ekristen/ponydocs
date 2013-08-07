@@ -66,7 +66,7 @@ SplunkBranchInherit = function() {
 
 						$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
 						if(forceTitle == null) {
-							sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
+							sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion, sourceLanguage], function(res) {
 								var manuals = eval(res.responseText);
 								var container = $('#manualselect_manuals');
 								container.html('');

@@ -432,9 +432,14 @@ class PonyDocsExtension
 		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 
 		$language = PONYDOCS_LANGUAGE_DEFAULT;
-		if (!empty($matches[2]) && strtolower($matches[2]) != PONYDOCS_LANGUAGE_DEFAULT) {
-			$language = strtolower($matches[2]);
+		if (!empty($matches[2])) {
+			$title = Title::newFromText( str_replace($matches[1], '', $title->__toString()) );
+
+			if (strtolower($matches[2]) != PONYDOCS_LANGUAGE_DEFAULT) {
+				$language = strtolower($matches[2]);
+			}
 		}
+
 		$langextra = ":{$language}";
 
 		/**
@@ -452,7 +457,7 @@ class PonyDocsExtension
 		$manualName = $matches[5];
 		$topicName = $matches[6];
 
-		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$product = PonyDocsProduct::GetProductByShortName($productName, $language);
 
 		// If we don't have a valid product, display 404
 		if (!($product instanceof PonyDocsProduct)) {
@@ -621,7 +626,7 @@ class PonyDocsExtension
 			 */
 			$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
 					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower( $productName ) . ':' . strtolower( $manualName ) . ':' . strtolower( $topicName )) . ":%{$langextra}'",
-							"cl_to = 'V:" . $dbr->strencode($productName . ':' . $versionSelectedName) . "'" ), __METHOD__ );
+							"cl_to = 'V:" . $dbr->strencode($productName . ':' . $versionSelectedName . ':' . $language) . "'" ), __METHOD__ );
 
 			if( !$res->numRows( ))
 			{
@@ -686,6 +691,8 @@ class PonyDocsExtension
 			$dbr = wfGetDB( DB_MASTER );
 			$topics = array( );
 
+			$tocLanguage = $match[4];
+
 			/**
 			 * Detect duplicate topic names.
 			 */
@@ -704,8 +711,8 @@ class PonyDocsExtension
 			/**
 			 * Create any topics which do not already exist in the saved TOC.
 			 */
-			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
-			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2] );
+			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1], $match[4] );
+			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2], $match[4] );
 			$pManualTopic = new PonyDocsTopic( $article );
 			$pTopicLanguage = $pManualTopic->getLanguage();
 
@@ -716,9 +723,9 @@ class PonyDocsExtension
 			}
 
 			// Clear all TOC cache entries for each version.
-			if($pManual) {
+			if ($pManual) {
 				foreach($manVersionList as $version) {
-					PonyDocsTOC::clearTOCCache($pManual, $version, $pProduct, $pTopicLanguage);
+					PonyDocsTOC::clearTOCCache($pManual, $version, $pProduct, $tocLanguage);
 					PonyDocsProductVersion::clearNAVCache($version);
 				}
 			}
@@ -732,10 +739,10 @@ class PonyDocsExtension
 
 				$versionIn = array( );
 				foreach( $manVersionList as $pV )
-					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionName( );
+					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionName( ) . ':' . $tocLanguage;
 
 				$res = $dbr->select( 'categorylinks', 'cl_sortkey',
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%'",
+					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%:".$tocLanguage."'",
 							"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ), __METHOD__ );
 
 				$topicName = '';
@@ -744,7 +751,7 @@ class PonyDocsExtension
 					/**
 					 * No match -- so this is a "new" topic.  Set name and create.
 					 */
-					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':' . $earliestVersion->getVersionName( );
+					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':' . $earliestVersion->getVersionName( ) . ':' . $tocLanguage;
 					//die( $topicName );
 
 					$topicArticle = new Article( Title::newFromText( $topicName ));
@@ -752,7 +759,7 @@ class PonyDocsExtension
 					{
 						$content = 	"= " . $m[1] . "=\n\n" ;
 						foreach( $manVersionList as $pVersion )
-							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionName( ) . ']]';
+							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionName( ) . ':' . $tocLanguage . ']]';
 
 						$topicArticle->doEdit( $content, 'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ), EDIT_NEW );
 						if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC " . $title->__toString( ));}
@@ -781,7 +788,7 @@ class PonyDocsExtension
 	{
 		$title = $article->getTitle( );
 
-		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)(:([a-zA-Z]{2}))?/i', $title->__toString( ), $match ))
+		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*):([a-zA-Z]{2})/i', $title->__toString( ), $match ))
 		{
 			/**
 			 * Extract our version and manual objects.  From it build the cache key then REMOVE IT.  THEN, create our PonyDocsTOC
@@ -789,13 +796,13 @@ class PonyDocsExtension
 			 */
 			$cache = PonyDocsCache::getInstance( );
 
-			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
-			$pManual = PonyDocsProductManual::GetManualByShortName( $match[1], $match[2] );
+			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1], $match[4] );
+			$pManual = PonyDocsProductManual::GetManualByShortName( $match[1], $match[2], $match[4] );
 			$pVersion = PonyDocsProductVersion::GetVersionByName( $match[1], $match[3] );
-			$pLanguage = $match[5];
+			$pLanguage = $match[4];
 
 			$tocKey = PonyDocsTOC . '_' . $pProduct->getShortName() . '_' . $pManual->getShortName( ) . '_' . $pVersion->getName( ) . '_' . $pLanguage;
-			
+
 			$cache->remove( $tocKey );
 
 			// Clear any PDF for this manual
@@ -1280,8 +1287,10 @@ HEREDOC;
 		{
 			$productName = PonyDocsProduct::GetSelectedProduct();
 			$versionName = PonyDocsProductVersion::GetSelectedVersion($productName);
+			$language    = $match[4];
+
 			$script = 	"function ponydocsOnLoad() {
-							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . "]]\");
+							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . ':' . $language . "]]\");
 						};";
 			$wgOut->addInLineScript( $script );
 		}
@@ -1859,7 +1868,6 @@ HEREDOC;
 	 * find the first article and redirect.
 	 */
 	static public function onArticleFromTitleQuickLookup(&$title, &$article) {
-
 		global $wgScriptPath;
 		if(preg_match('/&action=edit/', $_SERVER['PATH_INFO'])) {
 			// Check referrer and see if we're coming from a doc page.
@@ -1899,7 +1907,7 @@ HEREDOC;
 
 			// User wants to find first topic in a requested manual.
 			// Load up versions
-			PonyDocsProductVersion::LoadVersionsForProduct($targetProduct);
+			PonyDocsProductVersion::LoadVersionsForProduct($targetProduct, $targetLanguage);
 
 			// Determine version
 			if($targetVersion == '') {
@@ -1931,8 +1939,7 @@ HEREDOC;
 			}
 			// Get the TOC out of here! heehee
 			$toc = new PonyDocsTOC($man, $ver, $p, $targetLanguage);
-			list($toc1, $prev, $next, $start) = $toc->loadContent();
-			// TODO!!!BROKEN
+			list($toc, $prev, $next, $start) = $toc->loadContent();
 			foreach($toc as $entry) {
 				if(isset($entry['link']) && $entry['link'] != "") {
 					// We found the first article in the manual with a link.  
@@ -1942,7 +1949,7 @@ HEREDOC;
 					die();
 				}
 			}
-			die();
+			die('Ugh, we should not have gotten here!');
 		}
 		return true;
 	}

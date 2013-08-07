@@ -13,6 +13,7 @@ if( !defined( 'MEDIAWIKI' ))
 	die( "PonyDocs MediaWiki Extension" );
 
 require_once( "$IP/extensions/PonyDocs/PonyDocs.config.php" );
+require_once( "$IP/extensions/PonyDocs/PonyDocs.Languages.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsCache.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsExtension.body.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsWiki.php" );
@@ -163,7 +164,6 @@ $wgExtensionFunctions[] = 'efManualParserFunction_Setup';
 $wgExtensionFunctions[] = 'efVersionParserFunction_Setup';
 $wgExtensionFunctions[] = 'efProductParserFunction_Setup';
 $wgExtensionFunctions[] = 'efTopicParserFunction_Setup';
-$wgExtensionFunctions[] = 'efManualDescriptionParserFunction_Setup';
 
 /**
  * Our magic words for our custom parser functions.
@@ -172,7 +172,6 @@ $wgHooks['LanguageGetMagic'][] = 'efManualParserFunction_Magic';
 $wgHooks['LanguageGetMagic'][] = 'efVersionParserFunction_Magic';
 $wgHooks['LanguageGetMagic'][] = 'efProductParserFunction_Magic';
 $wgHooks['LanguageGetMagic'][] = 'efTopicParserFunction_Magic';
-$wgHooks['LanguageGetMagic'][] = 'efManualDescriptionParserFunction_Magic';
 
 /**
  * Create a single global instance of our extension.
@@ -273,12 +272,14 @@ function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' , $
 	$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ), array(
 						"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName )) . ':' . $dbr->strencode( strtolower( $manualName )) . "toc%'",
 						"cl_to = 'V:" . $productName . ':' . $version . "'" ), __METHOD__ );
+
+
 	if( !$res->numRows( ))
 	{
 		/**
 		 * Link to create new TOC page -- should link to current version TOC and then add message to explain.
 		 */
-		$output = 	'<p><a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . 'TOC' . $version, $wgArticlePath ) . '" style="font-size: 1.3em;">' . $param2 . "</a></p>
+		$output = 	'<p><a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . 'TOC' . $version . ':' . PONYDOCS_LANGUAGE_DEFAULT, $wgArticlePath ) . '" style="font-size: 1.3em;">' . $param2 . "</a></p>
 					<span style=\"padding-left: 20px;\">Click manual to create TOC for current version (" . $version . ").</span>\n";
 	}
 	else
@@ -472,21 +473,9 @@ function efTopicParserFunction_Setup()
 	$wgParser->setFunctionHook( 'topic', 'efTopicParserFunction_Render' );
 }
 
-function efManualDescriptionParserFunction_Setup()
-{
-	global $wgParser;
-	$wgParser->setFunctionHook( 'manualDescription', 'efManualDescriptionParserFunction_Render' );
-}
-
 function efTopicParserFunction_Magic( &$magicWords, $langCode )
 {
 	$magicWords['topic'] = array( 0, 'topic' );
-	return true;
-}
-
-function efManualDescriptionParserFunction_Magic( &$magicWords, $langCode )
-{
-	$magicWords['manualDescription'] = array( 0, 'manualDescription' );
 	return true;
 }
 
@@ -613,11 +602,11 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' )
 	 * this page -- which may be NONE -- and from this determine the "earliest" version to which this page
 	 * applies.
 	 */	
-	if( !PonyDocsProductManual::IsManual( $productShortName, $manualShortName )) {
+	if( !PonyDocsProductManual::IsManual( $productShortName, $manualShortName, $language )) {
 		return false;
 	}
 
-	$pManual = PonyDocsProductManual::GetManualByShortName( $productShortName, $manualShortName );
+	$pManual = PonyDocsProductManual::GetManualByShortName( $productShortName, $manualShortName, $language );
 	$pTopic = new PonyDocsTopic( new Article( $wgTitle ));
 	
 	/**
@@ -659,7 +648,7 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' )
 
 	$versionIn = array( );
 	foreach( $manVersionList as $pV )
-		$versionIn[] = $productShortName . ':' . $pV->getVersionName( );
+		$versionIn[] = $productShortName . ':' . $pV->getVersionName( ) . ':'. $language;
 
 	$res = $dbr->select( 'categorylinks', 'cl_sortkey',
 		array( 	"LOWER(cl_sortkey) LIKE 'Documentation:" . $dbr->strencode( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) . ":%:".strtolower($language)."'",
@@ -696,30 +685,6 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' )
 	return $parser->insertStripItem($output, $parser->mStripState);
 }
 
-/**
- * This expects to find:
- * 	{{#manualDescription:Text Description}}
- *
- * @param Parser $parser
- * @param string $param1 Full text of manual description, must be converted to rendered format.
- * @return mixed This returns TRUE if PonyDocsExtension::isSpeedProcessingEnabled() is TRUE, FALSE if we are not on a TOC page and returns a formated string if we are.
- */
-function efManualDescriptionParserFunction_Render( &$parser, $param1 = '' )
-{
-	global $wgTitle;
-
-	if (PonyDocsExtension::isSpeedProcessingEnabled()) return TRUE;
-
-	/**
-	 * We ignore this parser function if not in a TOC management page.
-	 */
-	if (!preg_match('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS.']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS.']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS.']*):([a-zA-Z]{2})/i', $wgTitle->__toString(), $matches))
-	{
-		return FALSE;
-	}
-	
-	return '<h3>Manual Description: </h3><h4>' . $param1 . '</h4>'; // Return formated output
-}
 
 function PonyDocsErrorHandler($errno, $errstr, $errfile, $errline) {
 	global $wgErrors;
@@ -777,6 +742,7 @@ $wgHooks['CategoryPageView'][] = 'PonyDocsCategoryPageHandler::onCategoryPageVie
 
 $wgHooks['ArticleDelete'][] = 'PonyDocsExtension::onArticleDelete';
 $wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete';
+//$wgHooks['ArticleSaveComplete'][] = 'PonyDocsExtension::onArticleSaveComplete_UpdateTOCCache';
 
 // Add version field to edit form
 $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditFormFields';
