@@ -50,7 +50,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			// Any title that is actually a page and in the PONYDOCS namespace
 			'NS:'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME => array( 'init' => 'prepareDocumentation', 'tpl' => 'documentation.tpl.php' ),
 			// Matches /Documentation page
-			'T:'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME => array( 'init' => 'prepareDocumentation', 'tpl' => 'home.tpl.php' ),
+			'/^T:(([a-zA-Z]{2})\/)?'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."(\/)?$/" => array( 'init' => 'prepareDocumentation', 'tpl' => 'home.tpl.php' ),
 			// Matches /Documentation/PRODUCT page
 			"/^T:(([a-zA-Z]{2})\/)?".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."\/([".PONYDOCS_PRODUCT_LEGALCHARS."]+)(\/)?$/" => array('init' => 'prepareDocumentation', 'tpl' => 'product.tpl.php'),
 			// Matches /Documentation/PRODUCT/VERSION page
@@ -114,7 +114,11 @@ class PonyDocsTemplate extends QuickTemplate {
 		}
 */
 
-		if($this->data['nscanonical'] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME || $wgTitle->__toString() == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME || preg_match('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/', $wgTitle->__toString())) {
+		if($this->data['nscanonical'] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+		|| $wgTitle->__toString() == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+		|| preg_match('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/', $wgTitle->__toString())
+		|| preg_match('/^(([a-zA-Z]{2})\/)?'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'/', $wgTitle->__toString())
+		) {
 			$this->inDocumentation = true;
 		}
 
@@ -236,7 +240,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		 */
 		if( sizeof( $pieces ) < 5 )
 		{
-			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX , $wgTitle->__toString( )))
+			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX . ":$wgPonyDocsLanguage" , $wgTitle->__toString( )))
 			{
 				$this->data['titletext'] = 'Versions Management - '.$this->data['selectedProduct'];
 				$this->data['headertext'] = $this->data['titletext'];
@@ -289,8 +293,15 @@ class PonyDocsTemplate extends QuickTemplate {
 			else
 			{
 				$subpieces = explode("/", $wgTitle->__toString( ));
-				if (count($subpieces) >= 2 && $subpieces[0] == 'Documentation') {
-					$product = PonyDocsProduct::GetProductByShortName($subpieces[1]);
+				if (count($subpieces) >= 2) {
+					if ($subpieces[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
+						$subprod = $subpieces[1];
+					}
+					else if ($subpieces[1] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
+						$subprod = $subpieces[2];
+					}
+
+					$product = PonyDocsProduct::GetProductByShortName($subprod, $wgPonyDocsLanguage);
 					$this->data['headertext'] = $product->getLongName() . ' <small>Manuals</small>';
 				}
 				else {
@@ -768,14 +779,10 @@ class PonyDocsTemplate extends QuickTemplate {
 			if ($language != PONYDOCS_LANGUAGE_DEFAULT) {
 				$includeLang = true;
 				$breadcrumbs[] = array('label' => $languageName);
+				$pieces[] = $language;
 			}
 
-			if (count($parts) > 1 && $parts[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) {
-				$pieces = array();
-
-				if ($includeLanguage)
-					$pieces[] = $language;
-
+			if (count($parts) > 0 && $parts[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) {
 				for ($x=0; $x<count($parts); $x++) {
 					$pieces[] = $parts[$x];
 

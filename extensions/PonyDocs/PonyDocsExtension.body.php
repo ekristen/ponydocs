@@ -108,7 +108,7 @@ class PonyDocsExtension
 			$languageCode = strtolower($match[5]);
 			$language_in_url = true;
 		}
-		else if (preg_match('/^\/([a-zA-Z]{2})\/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'\/(.*)/i', $title_match, $match)) {
+		else if (preg_match('/^\/([a-zA-Z]{2})\/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'(\/)?(.*)?/i', $title_match, $match)) {
 			$languageCode = strtolower($match[1]);
 			$language_in_url = true;
 		}

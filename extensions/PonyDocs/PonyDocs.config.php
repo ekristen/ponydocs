@@ -22,7 +22,8 @@ define('PONYDOCS_DOCUMENTATION_NAMESPACE_ID', 100);
 
 define('PONYDOCS_LANGUAGE_DEFAULT', 'en'); 
 // Automatically translate WikiDocs UI into documentations language format.
-define('PONYDOCS_LANGUAGE_AUTOUI', true);
+// TODO: Fix, Buggy -- This is buggy, not sure it should say in.
+define('PONYDOCS_LANGUAGE_AUTOUI', false);
 // Always include language in URL, to include the default language.
 define('PONYDOCS_LANGUAGE_ALWAYS', false);
 
