@@ -257,7 +257,7 @@ function efManualParserFunction_Magic( &$magicWords, $langCode )
  */
 function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' , $param3 = '')
 {
-	global $wgArticlePath, $wgUser, $wgScriptPath, $wgLanguageNames;
+	global $wgArticlePath, $wgUser, $wgScriptPath, $wgLanguageNames, $wgPonyDocsLanguage;
 
 	$valid = true;
 	if( !preg_match( PONYDOCS_PRODUCTMANUAL_REGEX, $param1 ) || !strlen( $param1 ) || !strlen( $param2 ) || !isset( $param3 ) )
@@ -274,8 +274,8 @@ function efManualParserFunction_Render( &$parser, $param1 = '', $param2 = '' , $
 
 	$dbr = wfGetDB( DB_SLAVE );
 	$res = $dbr->select( 'categorylinks', array( 'cl_sortkey', 'cl_to' ), array(
-						"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName )) . ':' . $dbr->strencode( strtolower( $manualName )) . "toc%'",
-						"cl_to = 'V:" . $productName . ':' . $version . "'" ), __METHOD__ );
+						"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName )) . ':' . $dbr->strencode( strtolower( $manualName )) . "toc%".$wgPonyDocsLanguage."'",
+						"cl_to = 'V:" . $productName . ':' . $version . ':' . $wgPonyDocsLanguage . "'" ), __METHOD__ );
 
 
 	if( !$res->numRows( ))
