@@ -44,27 +44,41 @@ class SpecialDocExport extends SpecialExport
 		global $wgOut, $wgArticlePath, $wgScriptPath;
 		global $wgUser, $wgRequest, $wgSitename;
 
+		$noTOC = false;
+
 		$dbr = wfGetDB( DB_SLAVE );
 
 		$this->setHeaders( );
 		$wgOut->setPagetitle( 'Documentation Export' );
 
-		if ($wgRequest->wasPosted()) {
+		if ($wgRequest->wasPosted() && $_POST['toc'] !== 0) {
 			$titles = array();
-			$titles[] = $_POST['toc'];
+			if ($_POST['toc'] == 'all') {
+				$res = $dbr->query("SELECT * FROM page WHERE page_namespace = '".PONYDOCS_DOCUMENTATION_NAMESPACE_ID."'");
+				while ($row = $res->fetchObject()) {
+					$titles[] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $row->page_title;
+				}
+				
+				$filename = urlencode( $wgSitename . '-all-' . wfTimestampNow() . '.xml' ) ;
+			}
+			else {
+				$titles[] = $_POST['toc'];
 
-			list($namespace, $productName, $manualNameTOCVersion) = explode(":", $_POST['toc']);
-			list($manualName, $versionName) = explode("TOC", $manualNameTOCVersion);
+				list($namespace, $productName, $manualNameTOCVersion, $language) = explode(":", $_POST['toc']);
+				list($manualName, $versionName) = explode("TOC", $manualNameTOCVersion);
 
-			$pProduct = PonyDocsProduct::GetProductByShortName($productName);
-			$vVersion = PonyDocsProductVersion::GetVersionByName($productName, $versionName);
-			$mManual  = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
+				$pProduct = PonyDocsProduct::GetProductByShortName($productName, $language);
+				$vVersion = PonyDocsProductVersion::GetVersionByName($productName, $versionName);
+				$mManual  = PonyDocsProductManual::GetManualByShortName($productName, $manualName, $language);
 
-			$ponyTOC = new PonyDocsTOC($mManual, $vVersion, $pProduct);
-			list($toc, $prev, $next, $start) = $ponyTOC->loadContent();
-			foreach($toc as $tocItem) {
-				if (isset($tocItem['title']))
-					$titles[] = $tocItem['title'];
+				$ponyTOC = new PonyDocsTOC($mManual, $vVersion, $pProduct, $language);
+				list($toc, $prev, $next, $start) = $ponyTOC->loadContent();
+				foreach($toc as $tocItem) {
+					if (isset($tocItem['title']))
+						$titles[] = $tocItem['title'];
+				}
+
+				$filename = urlencode( $wgSitename . '-' . $productName . '-' . $versionName . '-' . $manualName . '-' . $language . '-' . wfTimestampNow() . '.xml' );
 			}
 
 			$page_text = implode("\n", $titles);
@@ -77,18 +91,24 @@ class SpecialDocExport extends SpecialExport
 			wfResetOutputBuffers();
 			header( "Content-type: application/xml; charset=utf-8" );
 			// Provide a sane filename suggestion
-			$filename = urlencode( $wgSitename . '-' . $productName . '-' . $versionName . '-' . $manualName . '-' . wfTimestampNow() . '.xml' );
 			$wgRequest->response()->header( "Content-disposition: attachment;filename={$filename}" );
 
 			$this->doExport( $page_text, $history, $list_authors );
 			return;
 		}
-
+		else if ($wgRequest->wasPosted() && $_POST['toc'] === 0) {
+			// error
+			$noTOC = true;
+		}
 
 
 		$wgOut->addHTML( '<h2>Documentation Export</h2>' );
 		
 		$wgOut->addHTML( '<p>Below you can choose a Table of Contents for a Product, Version, Manual, it will export the entire contents of the Manual including all revisions into an XML file that can be imported back into any WikiDocs system.</p>');
+
+		if ($noTOC === true) {
+			$wgOut->addHTML( '<div class="alert alert-danger"><strong>ERROR: You must select a Table of Contents or All Documentation</div> ');
+		}
 
 		$tocs = array();
 
@@ -114,7 +134,7 @@ class SpecialDocExport extends SpecialExport
 
 					while( $subrow = $dbr->fetchObject( $subres ))
 					{
-						if (preg_match( '/^V:' . $product->getShortName() . ':(.*)/i', $subrow->cl_to, $vmatch) && in_array($vmatch[1], $allowed_versions))
+						if (preg_match( '/^V:' . $product->getShortName() . ':(.*):(.*)/i', $subrow->cl_to, $vmatch) && in_array($vmatch[1], $allowed_versions))
 							$versions[] = $vmatch[1];
 					}
 
@@ -135,6 +155,8 @@ class SpecialDocExport extends SpecialExport
 		<label for="toc">
 			Table of Contents: 
 			<select name="toc" id="selectTOC" class="input input-xxlarge">
+				<option value="0">Select a Table of Contents ...</option>
+				<option value="all">Export all Documentation</option>
 				{$toc_output}
 			</select>
 		</label>
