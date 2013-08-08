@@ -79,14 +79,15 @@ SplunkBranchInherit = function() {
 									$('#docbranchinherit .manualselect').fadeIn();
 								});
 
-                                $('label[for="manualselect_action_ignore"]').hide();
-                                $('label[for="manualselect_action_inherit"]').hide();
-                                $('#manualselect_action_branch').prop('checked', true);
-                                $('div#branchonly').show();
+                                if (sourceLanguage != targetLanguage) {
+                                    $('label[for="manualselect_action_ignore"]').hide();
+                                    $('label[for="manualselect_action_inherit"]').hide();
+                                    $('#manualselect_action_branch').prop('checked', true);
+                                    $('div#branchonly').show();
+                                }
 							});
 						}
 						else {
-						    console.log('Second');
 							// Force handling a title.
 							sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, sourceLanguage, targetLanguage, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
 						}
