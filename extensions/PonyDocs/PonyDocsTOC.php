@@ -147,7 +147,7 @@ class PonyDocsTOC
 		 */
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array( 	
-					"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( strtolower( $this->pManual->getShortName( ))) . "toc%:".$this->pLanguage."'",
+					"LOWER(cast(cl_sortkey AS CHAR)) LIKE '".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.":" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( $this->pManual->getShortName( ) ) . "TOC%:".$this->pLanguage."'",
 					"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( $this->pInitialVersion->getVersionName( )) . ':' . $this->pLanguage . "'" ),
 					__METHOD__ );
 
@@ -159,7 +159,7 @@ class PonyDocsTOC
 		$row = $dbr->fetchObject( $res );
 		$mTOCPageTitle = $row->cl_sortkey;
 		$this->mTOCPageTitle = $mTOCPageTitle;
-		
+
 		$res = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $mTOCPageTitle ) . "'", __METHOD__ );
 		while( $row = $dbr->fetchObject( $res ))
 		{
@@ -219,6 +219,8 @@ class PonyDocsTOC
 		global $wgPonyDocs;
 
 		global $title;
+
+		$this->load();
 
 		/**
 		 * From this we have the page ID of the TOC page to use -- fetch it then 

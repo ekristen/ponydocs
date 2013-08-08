@@ -228,7 +228,7 @@ class SpecialBranchInherit extends SpecialPage
 		$lastTopicTarget = null;
 
 		foreach($topicActions as $manualName => $manualData) {
-			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName);
+			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manualName, $sourceLanguage);
 			// Determine if TOC already exists for target version.
 			if(!PonyDocsBranchInheritEngine::TOCExists($product, $manual, $targetVersion, $targetLanguage)) {
 				print("<div class=\"normal\">TOC Does not exist for Manual " . $manual->getShortName() . " for version " . $targetVersion->getVersionName() . "</div>");
@@ -343,7 +343,7 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "inherit") {
 						try {
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . "</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], false, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic($topic['title'], $targetVersion, $targetLanguage, $sectionName, $topic['text'], false, true);
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
@@ -352,7 +352,7 @@ class SpecialBranchInherit extends SpecialPage
 					else if(isset($topic['action']) && $topic['action'] == "inheritpurge") {
 						try {
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . " and remove existing topic.</div>");
-							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic($topic['title'], $targetVersion, $sectionName, $topic['text'], true, true, true);
+							$lastTopicTarget = PonyDocsBranchInheritEngine::inheritTopic($topic['title'], $targetVersion, $targetLanguage, $sectionName, $topic['text'], true, true, true);
 							print("<div class=\"normal\">Complete</div>");
 						} catch(Exception $e) {
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");

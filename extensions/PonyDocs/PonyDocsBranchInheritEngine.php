@@ -151,12 +151,12 @@ class PonyDocsBranchInheritEngine {
 	 * 							reasons)
 	 * @returns boolean
 	 */
-	static function inheritTopic($topicTitle, $version, $tocSection, $tocTitle, $deleteExisting = false, $skipTOC = false) {
+	static function inheritTopic($topicTitle, $version, $language, $tocSection, $tocTitle, $deleteExisting = false, $skipTOC = false) {
 		global $wgTitle;
 		// Clear any hooks so no weirdness gets called after we save the 
 		// inherit
 		$wgHooks['ArticleSave'] = array();
-		if(!preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]*):([^:]*):(.*):([^:]*)$/', $topicTitle, $match)) {
+		if(!preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)$/', $topicTitle, $match)) {
 			throw new Exception("Invalid Title to Inherit From: " . $topicTitle);
 		}
 
@@ -165,10 +165,10 @@ class PonyDocsBranchInheritEngine {
 		$title = $match[3];
 
 		// Get PonyDocsProduct
-		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$product = PonyDocsProduct::GetProductByShortName($productName, $language);
 
 		// Get conflicts.
-		$conflicts = self::getConflicts($product, $topicTitle, $version);
+		$conflicts = self::getConflicts($product, $topicTitle, $version, $language);
 		if(!empty($conflicts)) {
 			if(!$deleteExisting) {
 				throw new Exception("When calling inheritTitle, there were conflicts and deleteExisting was false.");
@@ -201,15 +201,15 @@ class PonyDocsBranchInheritEngine {
 		// Add the appropriate version cateogry
 		// Check for existing category
 		$content = $existingArticle->getContent();
-		if(!preg_match("/\[\[Category:V:" . preg_quote($productName . ":" . $version->getVersionName()) . "\]\]/", $content)) {
-			$content .= "[[Category:V:" . $productName . ":" . $version->getVersionName() . "]]";
+		if(!preg_match("/\[\[Category:V:" . preg_quote($productName . ":" . $version->getVersionName() . ":" . $language) . "\]\]/", $content)) {
+			$content .= "[[Category:V:" . $productName . ":" . $version->getVersionName() . ":" . $language . "]]";
 			// Save the article as an edit
-			$existingArticle->doEdit($content, "Inherited topic " . $topicTitle . " with version: " . $productName . ":" . $version->getVersionName(), EDIT_UPDATE);
+			$existingArticle->doEdit($content, "Inherited topic " . $topicTitle . " with version: " . $productName . ":" . $version->getVersionName() . " and language " . $language, EDIT_UPDATE);
 		}
 		// Okay, update our toc.
 		if(!$skipTOC) {
-			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manual);
-			self::addToTOC($product, $manual, $version, $tocSection, $tocTitle);
+			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manual, $language);
+			self::addToTOC($product, $manual, $version, $language, $tocSection, $tocTitle);
 		}
 		return $title;
 	}
