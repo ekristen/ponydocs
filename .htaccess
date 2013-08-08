@@ -7,8 +7,11 @@ RewriteEngine On
 RewriteRule ^Documentation/$ /Documentation [L,R=301]
 
 # Redirect Ugly Documentation Topics to Pretty URLs
-RewriteRule ^Documentation:(.*):(.*):(.*):(.*) /Documentation/$1/$4/$2/$3 [L,QSA,R=301]
-RewriteRule ^Documentation:(.*):(.*):(.*) /Documentation/$1/latest/$2/$3  [L,QSA,R=301]
+#RewriteRule ^Documentation:(.*):(.*):(.*):(.*) /Documentation/$1/$4/$2/$3 [L,QSA,R=301]
+#RewriteRule ^Documentation:(.*):(.*):(.*) /Documentation/$1/latest/$2/$3  [L,QSA,R=301]
+
+# Language redirect
+RewriteRule ^Documentation:(.*):(.*):(.*):(.*):(.*) /$5/Documentation/$1/$4/$2/$3 [L,QSA,R=301]
 
 # Redirect Main_Page and Website Root
 RewriteRule ^$ /Documentation [R,L]

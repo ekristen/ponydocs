@@ -19,7 +19,7 @@ if( !defined( 'MEDIAWIKI' ) )
  * @todo document
  * @ingroup Skins
  */
-class SkinWikiDocs extends SkinTemplate {
+class SkinWikiDocs extends PonyDocsSkinTemplate {
 	var $skinname = 'WikiDocs';
 	var $stylename = 'WikiDocs';
 	var $template = 'WikiDocsTemplate';
@@ -33,17 +33,55 @@ class SkinWikiDocs extends SkinTemplate {
 		$out->addStyle( 'WikiDocs/bootstrap/css/bootstrap-responsive.min.css');
 		$out->addStyle( 'WikiDocs/font-awesome/css/font-awesome.min.css');
 		$out->addStyle( 'WikiDocs/main.css');
+		
+		$out->addMeta('viewport', 'width=device-width, initial-scale=1.0');
 	}
 
-	// We are going to totally overwrite this functionality to fix a weird issue
-	public function setTitle($t) {
-		global $wgTitle;
-		$this->mTitle = $wgTitle;
+	function tocIndent() {
+		return "\n<ul class=\"nav nav-list\">";
 	}
 
-	function printSource() {
-		return '';
+	/**
+	 * Finish one or more sublevels on the Table of Contents
+	 */
+	function tocUnindent($level) {
+		return "</li>\n" . str_repeat( "</ul>\n</li>\n", $level>0 ? $level : 0 );
 	}
+
+	/**
+	 * End a Table Of Contents line.
+	 * tocUnindent() will be used instead if we're ending a line below
+	 * the new level.
+	 */
+	function tocLineEnd() {
+		return "</li>\n";
+ 	}
+	
+
+	function tocLine( $anchor, $tocline, $tocnumber, $level, $sectionIndex = false ) {
+		$classes = "toclevel-$level";
+		if ( $sectionIndex !== false )
+			$classes .= " tocsection-$sectionIndex";
+		return "\n<li class=\"$classes\"><a href=\"#" .
+			$anchor . '"><span class="tocnumber">' . '</span> <span class="toctext">' .
+			$tocline . '</span></a>';
+	}
+
+	function tocList($toc) {
+		$title = wfMsgHtml('toc') ;
+
+		$output =<<<EOL
+			<div id="contents" class="pull-right well well-small">
+				<ul class="nav nav-list">
+					<li class="nav-header">{$title}</li>
+					<li>{$toc}</li>
+				</ul>
+			</div>
+EOL;
+
+		return $output;
+	}
+	
 }
 
 
@@ -94,7 +132,12 @@ EOL;
 				$items[] = '<li class="active">'.$item['label'].'</li>';
 			}
 			else {
-				$items[] = '<li><a href="'.$item['url'].'">'.$item['label'].'</a> <span class="divider">/</span></li>';
+				if (isset($item['url'])) {
+					$items[] = '<li><a href="'.$item['url'].'">'.$item['label'].'</a> <span class="divider">/</span></li>';
+				}
+				else {
+					$items[] = '<li class="active">'.$item['label'].' <span class="divider">/</span></li>';
+				}
 			}
 		}
 
@@ -111,7 +154,7 @@ EOL;
 
 	public function userMenu() {
 		if (!$this->globals->wgUser->isLoggedIn()) {
-			$output = '<a class="btn btn-primary pull-right" href="/Special:UserLogin">Login</a>';
+			$output = '<a class="btn btn-primary pull-right" href="/Special:UserLogin"><i class="icon-signin"></i> '.wfMsgForContent('login').'</a>';
 		}
 		else {
 			$first = array_shift($this->data['personal_urls']);
@@ -252,7 +295,7 @@ EOL;
 		}
 
 		$output[] = '<li class="divider"></li>';
-		$output[] = '<li><a href="/index.php?title='.$this->globals->wgTitle->__toString().'&action=pdfbook"><i class="icon-book"></i> PDF Version</a></li>';
+		$output[] = '<li><a href="/index.php?title='.$this->globals->wgTitle->__toString().'&action=pdfbook"><i class="icon-book"></i> PDF '.wfMsgForContent('version').'</a></li>';
 
 		$manual_output = implode("\n", $output);
 
@@ -303,6 +346,30 @@ EOL;
 
 		return $output;
 	}
+	
+	public function offeredLanguagesHtml() {
+		$output = '';
+
+		if (isset($this->data['topictranslations']) && !empty($this->data['topictranslations'])) {
+			foreach ($this->data['topictranslations'] as $idx => $data) {
+				$languages[] = '<a href="/' . $data['href'] . '">' . $data['name'] . '</a>';
+			}
+		}
+
+		$output_languages = implode(' , ', $languages);
+
+		if (!empty($output_languages)) {
+			$output =<<<EOL
+				<div class="muted offeredLanguages">
+					<div class="pull-right">
+						Other Translations: {$output_languages} --&nbsp;
+					</div>
+				</div>
+EOL;
+		}
+
+		return $output;
+	}
 
 
 	function productChangeHtml() {
@@ -341,7 +408,7 @@ EOL;
 				$extra .= ' [' . $version->getVersionStatus() . ']';
 			}
 			if ($latest == $version->getVersionName()) {
-				$extra .= ' (latest)';
+				$extra .= ' ('.wfMsgForContent('histlast').')';
 			}
 			if ($this->data['selectedVersion'] == $version->getVersionName()) {
 				$selected = ' selected="selected"';
@@ -412,25 +479,23 @@ EOL;
 
 
 	function htmlProductManuals() {
-		$product = PonyDocsProduct::GetProductByShortName($this->data['selectedProduct']);
-		$manuals = PonyDocsProductManual::GetDefinedManuals($this->data['selectedProduct'], true);
+		$product = PonyDocsProduct::GetProductByShortName($this->data['selectedProduct'], $this->data['selectedLanguage']);
+		$manuals = PonyDocsProductManual::GetDefinedManuals($this->data['selectedProduct'], $this->data['selectedLanguage']);
 		$version = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion']);
+		$language = $this->data['selectedLanguage'];
 
-		$nomv = false;
+		$nomv = true;
 		foreach ($manuals as $manual) {
-			$toc = new PonyDocsTOC($manual, $version, $product);
+			$toc = new PonyDocsTOC($manual, $version, $product, $language);
 			$toc_versions = $toc->getVersions();
-			if (empty($toc_versions))
-				$nomv = true;
+			if (!empty($toc_versions))
+				$nomv = false;
 		}
 
 		if (empty($manuals) || $nomv == true) {
-			if ($this->isAdmin()) {
-				$extra  = '<a href="/index.php?title=Documentation:'.$product->getShortName().':Manuals&action=edit" class="pull-right">Manage Manuals</a>';
-			}
 			$output =<<<EOL
 				<div class="alert alert-warning">
-					* This product does not have any defined manuals for this version. {$extra}<br>
+					* This product does not have any defined manuals for this version.<br>
 					* If you have versions and manuals defined, then you need to create your Table of Contents (access via Admin Menu)
 				</div>
 EOL;
@@ -443,11 +508,18 @@ EOL;
 			if (empty($toc_versions))
 				continue;
 
+			if ($this->data['selectedLanguage'] != PONYDOCS_LANGUAGE_DEFAULT) {
+				$href = "/".strtoupper($this->data['selectedLanguage'])."/".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."/{$this->data['selectedProduct']}/{$version->getVersionName()}/{$manual->getShortName()}";
+			}
+			else {
+				$href = "/".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."/{$this->data['selectedProduct']}/{$version->getVersionName()}/{$manual->getShortName()}";
+			}
+
 			$items[] =<<<EOL
 				<li class="span6 pull-left">
 					<div class="thumbnail">
 						<div class="caption">
-							<h3><a href="/Documentation/{$this->data['selectedProduct']}/{$version->getVersionName()}/{$manual->getShortName()}">{$manual->getLongName()}</a></h3>
+							<h3><a href="{$href}">{$manual->getLongName()}</a></h3>
 							<p>{$manual->getDescription()}</p>
 						</div>
 					</div>
@@ -470,7 +542,7 @@ EOL;
 
 
 	function htmlProducts() {
-		$products = PonyDocsProduct::GetDefinedProducts();
+		$products = PonyDocsProduct::GetDefinedProducts($this->data['selectedLanguage']);
 
 		foreach ($products as $product) {
 			$version = PonyDocsProductVersion::LoadVersionsForProduct($product->getShortName());
@@ -478,11 +550,13 @@ EOL;
 			if (empty($version))
 				continue;
 
+			$hrefLang = strtoupper($this->data['selectedLanguage']);
+
 			$items[] =<<<EOL
 				<li class="span6 pull-left">
 					<div class="thumbnail">
 						<div class="caption">
-							<h3><a href="/Documentation/{$product->getShortName()}">{$product->getLongName()}</a></h3>
+							<h3><a href="/{$hrefLang}/Documentation/{$product->getShortName()}">{$product->getLongName()}</a></h3>
 							<p>{$product->getDescription()}</p>
 						</div>
 					</div>
@@ -524,7 +598,7 @@ EOL;
 
 		if ($this->data['notspecialpage']) { 
 			if ($this->data['nav_urls']['recentchangeslinked'] ) {
-				$toolbox_items[] = '<li><a href="'.$this->data['nav_urls']['recentchangeslinked']['href'].'">'.$this->translator->translate('recentchangeslinked-toolbox').'</a></li>';
+				$toolbox_items[] = '<li><a href="'.$this->data['nav_urls']['recentchangeslinked']['href'].'"><i class="icon-archive"></i> '.$this->translator->translate('recentchangeslinked-toolbox').'</a></li>';
 			}
 		}
 		if (isset( $this->data['nav_urls']['trackbacklink'] ) && $this->data['nav_urls']['trackbacklink'] ) {
@@ -549,10 +623,12 @@ EOL;
 
 		$output_toolbox = implode("\n", $toolbox_items);
 
+		$toolbox_header = wfMsgForContent('toolbox');
+
 		$output =<<<EOL
 			<div class="well well-small">
 				<ul class="nav nav-list">
-					<li class="nav-header">Toolbox</li>
+					<li class="nav-header">{$toolbox_header}</li>
 					{$output_toolbox}
 				</ul>
 			</div>

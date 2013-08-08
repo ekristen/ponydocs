@@ -82,7 +82,7 @@ class PonyDocsPdfBook {
 		// Try and get rid of the TOC portion of the title
 		if (strpos($pieces[2], "TOC") && count($pieces) == 3) {
 			$pieces[2] = substr($pieces[2], 0, strpos($pieces[2], "TOC"));
-		} else if (count($pieces) != 5) {
+		} else if (count($pieces) != 6) {
 			// something is wrong, let's get out of here
 			$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 			if (PONYDOCS_REDIRECT_DEBUG) {
@@ -92,8 +92,9 @@ class PonyDocsPdfBook {
 			exit;
 		}
 
+		$language = $pieces[5];
 		$productName = $pieces[1];
-		$ponydocs = PonyDocsWiki::getInstance($productName);
+		$ponydocs = PonyDocsWiki::getInstance($productName, $language);
 		$pProduct = PonyDocsProduct::GetProductByShortName($productName);
 		if ($pProduct === NULL) { // product wasn't valid
 			wfProfileOut( __METHOD__ );
@@ -115,8 +116,7 @@ class PonyDocsPdfBook {
 
 			// We have our version and our manual
 			// Check to see if a file already exists for this combination
-			$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $productName . "-" . $versionText . "-" . $pManual->getShortName()
-					. "-book.pdf";
+			$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $productName . "-" . $versionText . "-" . $pManual->getShortName() . "-" . $language . "-book.pdf";
 			// Check first to see if this PDF has already been created and 
 			// is up to date.  If so, serve it to the user and stop 
 			// execution.
@@ -130,7 +130,7 @@ class PonyDocsPdfBook {
 			}
 			// Oh well, let's go on our merry way and create our pdf.
 
-			$toc = new PonyDocsTOC($pManual, $v, $pProduct);
+			$toc = new PonyDocsTOC($pManual, $v, $pProduct, $language);
 			list($manualtoc, $tocprev, $tocnext, $tocstart) = $toc->loadContent();
 
 			// We successfully got our table of contents.  It's 

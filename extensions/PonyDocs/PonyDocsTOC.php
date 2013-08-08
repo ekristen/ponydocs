@@ -89,11 +89,12 @@ class PonyDocsTOC
 	 * @param PonyDocsVersion $initialVersion Initial version (find manual tagged for this version?).
 	 * @param PonyDocsProduct $product The product all of this is for.
 	 */
-	public function __construct( PonyDocsProductManual& $pManual, PonyDocsProductVersion& $initialVersion, PonyDocsProduct& $product )
+	public function __construct( PonyDocsProductManual& $pManual, PonyDocsProductVersion& $initialVersion, PonyDocsProduct& $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		$this->pManual = $pManual;
 		$this->pInitialVersion = $initialVersion;
 		$this->pProduct = $product;
+		$this->pLanguage = $language;
 		$this->load( );
 	}
 
@@ -146,8 +147,8 @@ class PonyDocsTOC
 		 */
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'categorylinks', 'cl_sortkey', array( 	
-					"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( strtolower( $this->pManual->getShortName( ))) . "toc%'",
-					"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( $this->pInitialVersion->getVersionName( )) . "'" ),
+					"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( strtolower( $this->pManual->getShortName( ))) . "toc%:".$this->pLanguage."'",
+					"cl_to = 'V:" . $dbr->strencode( $this->pProduct->getShortName( )) . ":" . $dbr->strencode( $this->pInitialVersion->getVersionName( )) . ':' . $this->pLanguage . "'" ),
 					__METHOD__ );
 
 		if( !$res->numRows( ))
@@ -162,7 +163,7 @@ class PonyDocsTOC
 		$res = $dbr->select( 'categorylinks', 'cl_to', "cl_sortkey = '" . $dbr->strencode( $mTOCPageTitle ) . "'", __METHOD__ );
 		while( $row = $dbr->fetchObject( $res ))
 		{
-			if( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ))
+			if( preg_match( '/^v:(.*):(.*):(.*)/i', $row->cl_to, $match ))
 			{
 				$addV = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
 				if( $addV )
@@ -253,6 +254,7 @@ class PonyDocsTOC
 		$selectedProduct = $this->pProduct->getShortName();
 		$selectedVersion = $this->pInitialVersion->getVersionName();
 		$selectedManual = $this->pManual->getShortName();
+		$selectedLanguage = $this->pLanguage;
 
 		// Okay, let's determine if the VERSION that the user is in is latest, 
 		// if so, we should set latest to true.
@@ -263,7 +265,7 @@ class PonyDocsTOC
 		}
 
 		$cache = PonyDocsCache::getInstance();
-		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion;
+		$key = "TOCCACHE-" . $selectedProduct . "-" . $selectedManual . "-" . $selectedVersion . "-" . $selectedLanguage;
 		$toc = $cache->get($key);
 		if ($toc === null) {
 			// Cache did not exist, let's load our content is build up our cache 
@@ -312,7 +314,7 @@ class PonyDocsTOC
 
 					$title_suffix = preg_replace('/([^' . str_replace(' ', '', Title::legalChars()) . '])/', '', $baseTopic);
 					$title = PONYDOCS_DOCUMENTATION_PREFIX . "$selectedProduct:$selectedManual:$title_suffix";
-					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion($title, $selectedProduct);
+					$newTitle = PonyDocsTopic::GetTopicNameFromBaseAndVersion($title, $selectedProduct, $selectedLanguage);
 
 					/**
 					 * Hide topics which have no content (i.e. have not been created 
@@ -338,8 +340,12 @@ class PonyDocsTOC
 						$h1 = $newTitle;
 					}
 
+					$languageExtra = '';
+					if (PONYDOCS_LANGUAGE_ALWAYS == true || $selectedLanguage != PONYDOCS_LANGUAGE_DEFAULT)
+						$languageExtra = strtoupper("{$selectedLanguage}/");
+
 					$href = str_replace('$1', 
-						PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
+						$languageExtra . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$selectedProduct/$selectedVersion/$selectedManual/$title_suffix", 
 						$wgArticlePath);
 
 					$toc[$idx] = array(
@@ -356,9 +362,11 @@ class PonyDocsTOC
 				}
 				$idx++;
 			}
+
 			if (!$toc[$section]['subs']) {
 				unset( $toc[$section] );
 			}
+
 			// Okay, let's store in our cache.
 			$cache->put($key, $toc, time() + 3600);
 		}
@@ -383,12 +391,17 @@ class PonyDocsTOC
 				if ($latest) {
 					$safeVersion = preg_quote($selectedVersion, '#');
 					// Lets be specific and replace the version and not some other part of the URI that might match...
+					$languageExtra = '';
+					if (PONYDOCS_LANGUAGE_ALWAYS == true || $selectedLanguage != PONYDOCS_LANGUAGE_DEFAULT)
+						$languageExtra = strtoupper("{$selectedLanguage}/");
+
 					$toc[$idx]['link'] = preg_replace(
-						'#^/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
+						'#^/' . $languageExtra . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME .
 							'/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/' . "$safeVersion#",
-						'/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
+						'/' . $languageExtra . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/$1/latest',
 						$toc[$idx]['link'],
 						1);
+
 				}
 			}
 		}
@@ -450,11 +463,6 @@ class PonyDocsTOC
 		 * $obj->start = $start;
 		 * $cache->addKey($tocKey, $obj);
 		 */
-		
-		// Last but not least, get the manual description if there is one.
-		if (preg_match('/{{#manualDescription:([^}]*)}}/', $this->pTOCArticle->mContent, $matches)) {
-			$this->mManualDescription = $matches[1];
-		}
 
 		return array( $toc, $prev, $next, $start );
 	}
@@ -478,11 +486,16 @@ class PonyDocsTOC
 		return $secText;
 	}
 
-	static public function clearTOCCache($manual, $version, $product) {
+	static public function clearTOCCache($manual, $version, $product, $languageCode) {
 		error_log("INFO [PonyDocsTOC::clearTOCCache] Deleting cache entry of TOC for product " . $product->getShortName() . " manual " . $manual->getShortName() . ' and version ' . $version->getVersionName());
-		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName();
+		$key = "TOCCACHE-" . $product->getShortName() . "-" . $manual->getShortName() . "-" . $version->getVersionName() . "-" . $languageCode;
 		$cache = PonyDocsCache::getInstance();
 		$cache->remove($key);
+	}
+
+
+	public function getTranslations( ) {
+
 	}
 }
 

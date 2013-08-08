@@ -20,7 +20,14 @@ define('PONYDOCS_CRAWLER_AGENT_REGEX', '/gsa-crawler/');
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_NAME', 'Documentation');
 define('PONYDOCS_DOCUMENTATION_NAMESPACE_ID', 100);
 
-define('PONYDOCS_CACHE_ENABLED', false);
+define('PONYDOCS_LANGUAGE_DEFAULT', 'en'); 
+// Automatically translate WikiDocs UI into documentations language format.
+// TODO: Fix, Buggy -- This is buggy, not sure it should say in.
+define('PONYDOCS_LANGUAGE_AUTOUI', false);
+// Always include language in URL, to include the default language.
+define('PONYDOCS_LANGUAGE_ALWAYS', false);
+
+define('PONYDOCS_CACHE_ENABLED', true);
 define('PONYDOCS_CACHE_DEBUG', false);
 define('PONYDOCS_REDIRECT_DEBUG', false);
 define('PONYDOCS_SESSION_DEBUG', false);
@@ -43,7 +50,7 @@ define('PONYDOCS_PRODUCTVERSION_TITLE_REGEX', '/^' . PONYDOCS_DOCUMENTATION_PREF
 define('PONYDOCS_PRODUCTMANUAL_SUFFIX', ':Manuals' );
 define('PONYDOCS_PRODUCTMANUAL_LEGALCHARS', 'A-Za-z0-9_,.-' );
 define('PONYDOCS_PRODUCTMANUAL_REGEX', '/([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/' );
-define('PONYDOCS_PRODUCTMANUAL_TITLE_REGEX', '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)' . PONYDOCS_PRODUCTMANUAL_SUFFIX . '/' );
+define('PONYDOCS_PRODUCTMANUAL_TITLE_REGEX', '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)' . PONYDOCS_PRODUCTMANUAL_SUFFIX . ':([a-zA-Z]{2})/' );
 
 // category cache expiration in seconds
 define('CATEGORY_CACHE_TTL', 300);

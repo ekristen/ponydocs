@@ -2093,6 +2093,9 @@ if ( \$wgCommandLineMode ) {
 # sure that cached pages are cleared.
 \$wgCacheEpoch = max( \$wgCacheEpoch, gmdate( 'YmdHis', @filemtime( __FILE__ ) ) );
 
+# Enable uploads by default
+\$wgEnableUploads = true;
+
 # Include PonyDocs Extension
 
 "; ## End of setting the $localsettings string

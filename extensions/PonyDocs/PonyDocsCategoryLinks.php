@@ -3,12 +3,12 @@
 class PonyDocsCategoryLinks
 {
 
-	static public function getTOCByProductManualVersion($productShort, $manualShort, $version)
+	static public function getTOCByProductManualVersion($productShort, $manualShort, $version, $language)
 	{
 		$dbr = wfGetDB( DB_SLAVE );
 		$res = $dbr->select( 'categorylinks', 'cl_to', 
-			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower( $productShort ) . ':' . strtolower( $manualShort )) . "toc%'",
-					"cl_to = 'V:" . $dbr->strencode($productShort . ":" . $version) . "'" ), __METHOD__ );
+			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower( $productShort ) . ':' . strtolower( $manualShort )) . "toc%:".$language."'",
+					"cl_to = 'V:" . $dbr->strencode($productShort . ":" . $version . ":" . $language) . "'" ), __METHOD__ );
 		return $res;
 	}
 

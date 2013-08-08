@@ -81,7 +81,7 @@ class PonyDocsArticleFactory
 	 */
 	static public function getArticleMetadataFromTitle($title) {
 		$meta = array();
-		if (preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*):([' . Title::legalChars( ) . ']*):([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*))/i', $title, $match)) {
+		if (preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*):([' . Title::legalChars( ) . ']*):([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)):([a-zA-Z]{2})/i', $title, $match)) {
 			// matched topic regex
 			$meta['type'] = self::ARTICLE_TYPE_TOPIC;
 			$meta['namespace'] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
@@ -91,7 +91,8 @@ class PonyDocsArticleFactory
 			$meta['manual'] = $match[3];
 			$meta['topic'] = $match[4];
 			$meta['base_version'] = $match[5];
-		} elseif (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*))/i', $title, $match )) {
+			$meta['language'] = $match[6];
+		} elseif (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)):([a-zA-Z]{2})/i', $title, $match )) {
 			// matched TOC regex
 			$meta['type'] = self::ARTICLE_TYPE_TOC;
 			$meta['namespace'] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME;
@@ -100,6 +101,7 @@ class PonyDocsArticleFactory
 			$meta['product'] = $match[2];
 			$meta['manual'] = $match[3];
 			$meta['base_version'] = $match[4];
+			$meta['language'] = $match[5];
 		} else {
 			// no match
 			$meta['type'] = self::ARTICLE_TYPE_OTHER;

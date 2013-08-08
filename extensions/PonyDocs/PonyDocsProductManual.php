@@ -27,6 +27,8 @@ class PonyDocsProductManual
 
 	protected $pName;
 
+	protected $mLanguage;
+
 	/**
 	 * Our list of manuals loaded from the special page, stored statically.  This only contains the manuals
 	 * which have a TOC defined and tagged to the currently selected version.
@@ -49,13 +51,14 @@ class PonyDocsProductManual
 	 * @param string $shortName Short name used to refernce manual in URLs.
 	 * @param string $longName Display name for manual.
 	 */
-	public function __construct( $pName, $shortName, $longName = '', $description = '' )
+	public function __construct( $pName, $shortName, $longName = '', $description = '', $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		//$this->mShortName = strtolower( $shortName );
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . '])/', '', $shortName );
 		$this->pName = $pName;
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
 		$this->mDescription = strlen( $description ) ? $description : '';
+		$this->mLanguage = $language;
 	}
 
 	public function getShortName( )
@@ -78,6 +81,11 @@ class PonyDocsProductManual
 		return $this->mDescription;
 	}
 
+	public function getLanguage()
+	{
+		return $this->mLanguage;
+	}
+
 	/**
 	 * This loads the list of manuals BASED ON whether each manual defined has a TOC defined for the
 	 * currently selected version or not.
@@ -86,10 +94,8 @@ class PonyDocsProductManual
 	 * @return array
 	 */
 
-	static public function LoadManualsForProduct( $productName, $reload = false )
+	static public function LoadManualsForProduct( $productName, $reload = false, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		$dbr = wfGetDB( DB_SLAVE );
-
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */
@@ -100,7 +106,7 @@ class PonyDocsProductManual
 
 		// Use 0 as the last parameter to enforce getting latest revision of 
 		// this article.
-		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX ), 0);
+		$article = new Article( Title::newFromText( PONYDOCS_DOCUMENTATION_PREFIX . $productName . PONYDOCS_PRODUCTMANUAL_SUFFIX . ":{$language}" ), 0);
 		$content = $article->getContent( );
 
 		if( !$article->exists( ))
@@ -127,10 +133,10 @@ class PonyDocsProductManual
 
 		foreach( $matches as $m )
 		{
-			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2], $m[3] );
+			$pManual = new PonyDocsProductManual( $productName, $m[1], $m[2], $m[3], $language );
 			self::$sDefinedManualList[$productName][strtolower($pManual->getShortName( ))] = $pManual;
 
-			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName));
+			$res = PonyDocsCategoryLinks::getTOCByProductManualVersion($productName, $pManual->getShortName(), PonyDocsProductVersion::GetSelectedVersion($productName), $language);
 
 			if( !$res->numRows( )) {
 				continue;
@@ -148,9 +154,10 @@ class PonyDocsProductManual
 	 * @static
 	 * @return array
 	 */
-	static public function GetManuals( $productName )
+	static public function GetManuals( $productName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		return self::LoadManualsForProduct( $productName );
+		
+		return self::LoadManualsForProduct( $productName, true, $language );
 	}
 
 	/**
@@ -159,9 +166,9 @@ class PonyDocsProductManual
 	 * @static
 	 * @returns array
 	 */
-	static public function GetDefinedManuals( $productName )
+	static public function GetDefinedManuals( $productName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		self::LoadManualsForProduct( $productName );
+		self::LoadManualsForProduct( $productName, true, $language );
 		return self::$sDefinedManualList[$productName];
 	}
 
@@ -172,10 +179,12 @@ class PonyDocsProductManual
 	 * @param string $shortName
 	 * @return PonyDocsManual&
 	 */
-	static public function & GetManualByShortName( $productName, $shortName )
+	static public function & GetManualByShortName( $productName, $shortName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
+		self::LoadManualsForProduct( $productName, true, $language );
+		error_log("[DEBUG] => $productName, $shortName, $language => " . print_r($sDefinedManualList, true));
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
-		if( self::IsManual( $productName, $convertedName ))
+		if( self::IsManual( $productName, $convertedName, $language ))
 			return self::$sDefinedManualList[$productName][strtolower($convertedName)];
 		return null;
 	}
@@ -187,11 +196,11 @@ class PonyDocsProductManual
 	 * @param string $shortName
 	 * @return boolean
 	 */
-	static public function IsManual( $productName, $shortName )
+	static public function IsManual( $productName, $shortName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		// We no longer specify to reload the manual data, because that's just 
 		// insanity.
-		self::LoadManualsForProduct($productName, false);
+		self::LoadManualsForProduct($productName, false, $language);
 		// Should just force our manuals to load, just in case.
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/', '', $shortName );
 		return isset( self::$sDefinedManualList[$productName][strtolower($convertedName)] );
@@ -211,6 +220,38 @@ class PonyDocsProductManual
 		if( !isset($pcs[2]) || !self::IsManual( $productName, $pcs[2] ))
 			return null;
 		return self::GetManualByShortName( $productName, $pcs[2] );
+	}
+
+	static public function getTranslations($productName) {
+		$dbr = wfGetDB( DB_SLAVE );
+
+		self::LoadManualsForProduct( $productName );
+
+		$translations = array();
+		$langs = array();
+		$namespace_id = PONYDOCS_DOCUMENTATION_NAMESPACE_ID;
+
+		foreach (self::$sDefinedManualList as $product => $manual) {
+			foreach ($manual as $name => $object) {
+				$translations[$object->getLanguage()][$name] = $object;
+				$langs[] = $object->getLanguage();
+			}
+
+			$like_query = "{$product}" . PONYDOCS_PRODUCTMANUAL_SUFFIX . ':%';
+			$res = $dbr->query("SELECT * FROM page WHERE page_namespace = '{$namespace_id}' AND page_title LIKE '{$like_query}'");
+
+			if ($res->numRows() != 0) {
+				while ($row = $res->fetchObject()) {
+					if (preg_match(PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, PONYDOCS_DOCUMENTATION_PREFIX . $row->page_title, $matches)) {
+						$langs[] = $matches[2];
+					}
+				}
+			}
+		}
+
+		$langs = array_unique($langs);
+
+		return $langs;
 	}
 };
 

@@ -59,7 +59,6 @@
 	</div>
 </div>
 
-
 <?php if ($this->inDocumentation && isset($this->data['headertext'])): ?>
 <div id="pageHeader" class="container">
 	<div class="row">

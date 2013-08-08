@@ -50,15 +50,23 @@ SplunkBranchInherit = function() {
 						sourceVersion = $('#versionselect_sourceversion').val();
 					}
 					targetVersion = $('#versionselect_targetversion').val();
-					if(sourceVersion == targetVersion) {
-						alert('Target version can not be the same as source version.');
+					
+					sourceLanguage = $('#languageselect_sourcelanguage').val();
+					targetLanguage = $('#languageselect_targetlanguage').val();
+					
+					if(sourceVersion == targetVersion && sourceLanguage == targetLanguage) {
+						alert('Target version and langugae can not be the same as source version and language.');
 					}
 					else {
 						$('#docbranchinherit .sourceversion').html(sourceVersion);
 						$('#docbranchinherit .targetversion').html(targetVersion);
+
+						$('#docbranchinherit .sourcelanguage').html(sourceLanguage);
+						$('#docbranchinherit .targetlanguage').html(targetLanguage);
+
 						$('#versionselect_submit').attr("disabled", "disabled").attr("value", "Fetching Data...");
 						if(forceTitle == null) {
-							sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion], function(res) {
+							sajax_do_call('SpecialBranchInherit::ajaxFetchManuals', [sourceProduct, sourceVersion, sourceLanguage], function(res) {
 								var manuals = eval(res.responseText);
 								var container = $('#manualselect_manuals');
 								container.html('');
@@ -70,11 +78,17 @@ SplunkBranchInherit = function() {
 									$('#versionselect_submit').attr("value", "Continue to Manuals").removeAttr("disabled");
 									$('#docbranchinherit .manualselect').fadeIn();
 								});
+
+                                $('label[for="manualselect_action_ignore"]').hide();
+                                $('label[for="manualselect_action_inherit"]').hide();
+                                $('#manualselect_action_branch').prop('checked', true);
+                                $('div#branchonly').show();
 							});
 						}
 						else {
+						    console.log('Second');
 							// Force handling a title.
-							sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
+							sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, sourceLanguage, targetLanguage, forceManual, forceTitle], SplunkBranchInherit.setupTopicActions);
 						}
 					}
 				});
@@ -108,7 +122,7 @@ SplunkBranchInherit = function() {
 					});
 					$("#manualselect_submit").attr("disabled", "disabled").attr("value", "Fetching Data...");
 					// Okay, let's fetch our tocs.
-					sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
+					sajax_do_call('SpecialBranchInherit::ajaxFetchTopics', [sourceProduct, sourceVersion, targetVersion, sourceLanguage, targetLanguage, manuals.join(',')], SplunkBranchInherit.setupTopicActions);
 				});
 				$('#topicactions_submit').click(function() {
 						if(!confirm("Are you sure you want to process this job?  Be sure to review all topics because there is no stopping it once it begins.  Please note this will take some time, so please be patient.")) {
@@ -148,7 +162,12 @@ SplunkBranchInherit = function() {
 							SplunkBranchInherit.jobID = res.responseText;
 							sajax_request_type = 'POST';
 							SplunkBranchInherit.fetchProgress();
-							sajax_do_call('SpecialBranchInherit::ajaxProcessRequest', [SplunkBranchInherit.jobID, sourceProduct, sourceVersion, targetVersion, $.toJSON(topicActions)], function(res) {
+							console.log('Source Product: ' + sourceProduct);
+							console.log('Source Version: ' + sourceVersion);
+							console.log('Source Language: ' + sourceLanguage);
+							console.log('Target Version: ' + targetVersion);
+							console.log('Target Language: ' + targetLanguage);
+							sajax_do_call('SpecialBranchInherit::ajaxProcessRequest', [SplunkBranchInherit.jobID, sourceProduct, sourceVersion, sourceLanguage, targetVersion, targetLanguage, $.toJSON(topicActions)], function(res) {
 								completed = true;
 								clearTimeout(progressTimer);
 								progressTimer = null;

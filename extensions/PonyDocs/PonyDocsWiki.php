@@ -17,18 +17,22 @@ class PonyDocsWiki
 	 * @var PonyDocsWiki
 	 */
 	static protected $instance = array();
+	
+	protected $language = PONYDOCS_LANGUAGE_DEFAULT;
 
 	/**
 	 * Made private to enforce singleton pattern.  On instantiation (through the first call to 'getInstance') we cache our
 	 * versions and manuals [we don't save them we just cause them to load -- is this necessary?].
 	 */
-	private function __construct( $product )
+	private function __construct( $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		/**
 		 * @FIXME:  Only necessary in Documentation namespace!
 		 */
 		PonyDocsProductVersion::LoadVersionsForProduct( $product, true );
 		PonyDocsProductManual::LoadManualsForProduct( $product, true );
+
+		$this->language = strtolower($language);
 	}
 
 	/**
@@ -37,10 +41,10 @@ class PonyDocsWiki
 	 * @static
 	 * @return PonyDocsWiki
 	 */
-	static public function &getInstance( $product )
+	static public function &getInstance( $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		if( !isset(self::$instance[$product]) )
-			self::$instance[$product] = new PonyDocsWiki( $product );
+			self::$instance[$product] = new PonyDocsWiki( $product, $language );
 		return self::$instance[$product];
 	}
 
@@ -54,7 +58,7 @@ class PonyDocsWiki
 	 */
 	public function getProductsForTemplate() {
 		$dbr = wfGetDB(DB_SLAVE);
-		$product = PonyDocsProduct::GetProducts();
+		$product = PonyDocsProduct::GetProducts( $this->getCurrentLanguage() );
 		$productAry = array();
 
 		foreach ($product as $p) {
@@ -102,7 +106,7 @@ class PonyDocsWiki
 		$out = array( );
 		foreach( $versions as $v )
 		{
-			$out[] = array( 'name' => $v->getVersionName( ), 'href' => str_replace( '$1', 'Category:V:' . $v->getProductName() . ':' . $v->getVersionName( ), $wgArticlePath ));
+			$out[] = array( 'name' => $v->getVersionName( ), 'href' => str_replace( '$1', 'Category:V:' . $v->getProductName() . ':' . $v->getVersionName( ) . ':' . $pTopic->getLanguage(), $wgArticlePath ));
 		}
 
 		return $out;
@@ -151,12 +155,12 @@ class PonyDocsWiki
 	 *
 	 * @return array
 	 */
-	public function getManualsForProduct( $product )
+	public function getManualsForProduct( $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		PonyDocsProductVersion::LoadVersionsForProduct($product); 	// Dependency
-		PonyDocsProductVersion::getSelectedVersion($product);
-		PonyDocsProductManual::LoadManualsForProduct($product);	// Dependency
-		$manuals = PonyDocsProductManual::GetManuals( $product );
+		PonyDocsProductVersion::LoadVersionsForProduct($product, false, $language); 	// Dependency
+		PonyDocsProductVersion::getSelectedVersion($product, $language);
+		PonyDocsProductManual::LoadManualsForProduct($product, false, $language);	// Dependency
+		$manuals = PonyDocsProductManual::GetManuals( $product, $language );
 
 		$out = array( );
 		foreach( $manuals as $m )
@@ -199,6 +203,12 @@ class PonyDocsWiki
 
 		return $sidebar;
 	}
+	
+	
+	public function getCurrentLanguage() {
+		return $this->language;
+	}
+	
 }
 
 /**

@@ -47,18 +47,25 @@ class PonyDocsExtension
 	{
 		global $wgScriptPath;
 		global $wgHooks, $wgArticlePath;
+		global $wgLanguageCode;
+		global $wgUser;
+		global $wgPonyDocsLanguage;
 
 		$this->setPathInfo( );
 
+		if (preg_match('/^'. str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([a-zA-Z]{2})/', $_SERVER['PATH_INFO'], $match)) {
+			// do nothing!
+		}
+		else 
 		/**
 		 * If we have a title which is an ALIAS of the form:
 		 * 		Documentation/<product>/<latest|version>/<manual>/<topic>
 		 * Then we need to register a hook to do the translation of this to a real topic name.
 		 */
-		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
+		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
 			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
 		}
-		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)\/(.*)$/i', $_SERVER['PATH_INFO'], $match ))
+		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(.*)\/(.*)\/(.*)\/(.*)$/i', $_SERVER['PATH_INFO'], $match ))
 		{
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_New';
 			$this->mURLMode = PonyDocsExtension::URLMODE_ALIASED;
@@ -69,9 +76,63 @@ class PonyDocsExtension
 		 * PONYDOCS_DOCUMENTATION_PREFIX . '<product>:<manual>:<topic>'
 		 * With no version.  Use the latest RELEASED version of the topic.
 		 */
-		else if( preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match ))
-		{
+		else if (
+			preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match ) &&
+			!preg_match( '/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+)TOC([^:]+):([^:]+)$/i', $_SERVER['PATH_INFO'], $match )
+		) {
 			$wgHooks['ArticleFromTitle'][] = 'PonyDocsExtension::onArticleFromTitle_NoVersion';
+		}
+
+
+		/**
+		 * From here on is language related
+		 */
+		$languageCode = PONYDOCS_LANGUAGE_DEFAULT;
+		$language_in_url = false;
+		if (isset($_REQUEST['title'])) {
+			$title_match = $_REQUEST['title'];
+		}
+		else {
+			$title_match = $_SERVER['PATH_INFO'];
+		}
+
+		if (preg_match('/^'.PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE.':([a-zA-Z]{2})$/', $title_match, $match)) {
+			$languageCode = strtolower($match[1]);
+			$language_in_url = true;
+		}
+		else if (preg_match('/^'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.':(.*)'.PONYDOCS_PRODUCTMANUAL_SUFFIX.':([a-zA-Z]{2})$/', $title_match, $match)) {
+			$languageCode = strtolower($match[2]);
+			$language_in_url = true;
+		}
+		else if (preg_match('/^'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.':(.*):(.*):(.*):(.*):([a-zA-Z]{2})$/' , $title_match, $match)) {
+			$languageCode = strtolower($match[5]);
+			$language_in_url = true;
+		}
+		else if (preg_match('/^\/([a-zA-Z]{2})\/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'(\/)?(.*)?/i', $title_match, $match)) {
+			$languageCode = strtolower($match[1]);
+			$language_in_url = true;
+		}
+
+		if (PONYDOCS_LANGUAGE_AUTOUI == true) {
+			$wgLanguageCode = $languageCode;
+		}
+
+		$wgPonyDocsLanguage = $languageCode;
+
+		/**
+		 * If we are in the default language and the 
+		 * configuration is set to not always include
+		 * the language in the URL, and the current path
+		 * includes a language code, perform 301 redirect
+		 * 
+		 * This exists mainly for SEO purposes.
+		 */
+		if ($languageCode == PONYDOCS_LANGUAGE_DEFAULT && PONYDOCS_LANGUAGE_ALWAYS === false && $language_in_url == true) {
+			$new_location = str_replace($match[1], '', $_SERVER['PATH_INFO']);
+			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
+			header("HTTP/1.1 301 Moved Permanently");
+			header("Location: {$new_location}");
+			die();
 		}
 	}
 
@@ -132,7 +193,7 @@ class PonyDocsExtension
 		/**
 		 * We only care about Documentation namespace for rewrites and they must contain a slash, so scan for it.
 		 */
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
+		if( !preg_match( '/^(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*)\/(.*)\/(.*)\/(.*)$/i', $reTitle->__toString( ), $matches ))
 			return false;
 
 		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
@@ -145,8 +206,8 @@ class PonyDocsExtension
 		 *  3= Version OR 'latest' as a string.
 		 *  4= Wiki topic name.
 		 */
-		$productName = $matches[1];
-		$versionName = $matches[2];
+		$productName = $matches[3];
+		$versionName = $matches[4];
 		$version = '';
 
 		PonyDocsProductVersion::LoadVersionsForProduct($productName);
@@ -170,7 +231,7 @@ class PonyDocsExtension
 			 * do some magic sorting below.
 			 */
 			$res = $dbr->select( 'categorylinks', 'cl_to', 
-								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) . ":%'",
+								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[3] . ':' . $matches[4] . ':' . $matches[5] )) . ":%:".$matches[2]."'",
 								 __METHOD__ );
 
 			if( !$res->numRows( ))
@@ -217,7 +278,7 @@ class PonyDocsExtension
 					 */
 
 					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[1] . ':' . $matches[2] . ':' . $matches[3] )) . ":%'",
+										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $matches[3] . ':' . $matches[4] . ':' . $matches[5] )) . ":%:".$matches[2]."'",
 												"cl_to = 'V:" . $matches[1] . ':' . $pV->getVersionName( ) . "'" ), __METHOD__ );
 
 					if( !$res->numRows( ))
@@ -258,7 +319,7 @@ class PonyDocsExtension
 			 * is the URL to redirect to.  
 			 */
 			$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . strtolower( $matches[1] ) . ':' . strtolower( $matches[2] ) . ':' . strtolower( $matches[3] ) . ":%'",
+					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . strtolower( $matches[3] ) . ':' . strtolower( $matches[4] ) . ':' . strtolower( $matches[5] ) . ":%:".$matches[2]."'",
 							"cl_to = 'V:" . $productName . ':' . $version->getVersionName( ) . "'" ), __METHOD__ );
 
 			if( !$res->numRows( ))
@@ -303,7 +364,7 @@ class PonyDocsExtension
 		return true;
 	}
 
-	static public function onArticleFromTitle_NoVersion( &$title, &$article )
+	static public function onArticleFromTitle_NoVersion( &$title, &$article, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		global $wgArticlePath;
 
@@ -311,7 +372,8 @@ class PonyDocsExtension
 
 		// If this article doesn't have a valid manual, don't display the article
 		$articleMetadata = PonyDocsArticleFactory::getArticleMetadataFromTitle($title->__toString());
-		if (!PonyDocsProductManual::IsManual($articleMetadata['product'], $articleMetadata['manual'])) {
+
+		if (!PonyDocsProductManual::IsManual($articleMetadata['product'], $articleMetadata['manual'], $language)) {
 			$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
 			return false;
 		}
@@ -412,25 +474,38 @@ class PonyDocsExtension
 		 * $matches[3] = manual
 		 * $matches[4] = topic
 		 */
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', $title->__toString( ), $matches ))
+		if( !preg_match( '/^(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*)\/(.*)\/(.*)\/(.*)$/i', $title->__toString( ), $matches ))
 			return false;
 
 		$defaultRedirect = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME, $wgArticlePath );
 
+		$language = PONYDOCS_LANGUAGE_DEFAULT;
+		if (!empty($matches[2])) {
+			$title = Title::newFromText( str_replace($matches[1], '', $title->__toString()) );
+
+			if (strtolower($matches[2]) != PONYDOCS_LANGUAGE_DEFAULT) {
+				$language = strtolower($matches[2]);
+			}
+		}
+
+		$langextra = ":{$language}";
+
 		/**
 		 * At this point $matches contains:
 		 * 	0= Full title.
-		 *  1= Product name
-		 *  2= Version OR 'latest' as a string.
-		 *  3= Manual name (short name).
-		 *  4= Wiki topic name.
+		 *  1= Lang with Slash
+		 *  2= Lang Code
+		 *  3= Product name
+		 *  4= Version OR 'latest' as a string.
+		 *  5= Manual name (short name).
+		 *  6= Wiki topic name.
 		 */
-		$productName = $matches[1];
-		$versionName = $matches[2];
-		$manualName = $matches[3];
-		$topicName = $matches[4];
+		$productName = $matches[3];
+		$versionName = $matches[4];
+		$manualName = $matches[5];
+		$topicName = $matches[6];
 
-		$product = PonyDocsProduct::GetProductByShortName($productName);
+		$product = PonyDocsProduct::GetProductByShortName($productName, $language);
 
 		// If we don't have a valid product, display 404
 		if (!($product instanceof PonyDocsProduct)) {
@@ -478,7 +553,7 @@ class PonyDocsExtension
 			 */
 
 			$res = $dbr->select( 'categorylinks', 'cl_to',
-								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . ':' . $topicName )) . ":%'",
+								 "LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manualName . ':' . $topicName )) . ":%{$langextra}'",
 								 __METHOD__ );
 
 			if( !$res->numRows( ))
@@ -544,7 +619,7 @@ class PonyDocsExtension
 					 */
 
 					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName . ':' . $manualName . ':' . $topicName )) . ":%'",
+										array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode( strtolower( $productName . ':' . $manualName . ':' . $topicName )) . ":%{$langextra}'",
 												"cl_to = 'V:" . $dbr->strencode($pV->getProductName( ) . ':' . $pV->getVersionName( )) . "'" ), __METHOD__ );
 
 					if( !$res->numRows( ))
@@ -598,8 +673,8 @@ class PonyDocsExtension
 			 * is the URL to redirect to.  
 			 */
 			$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower( $productName ) . ':' . strtolower( $manualName ) . ':' . strtolower( $topicName )) . ":%'",
-							"cl_to = 'V:" . $dbr->strencode($productName . ':' . $versionSelectedName) . "'" ), __METHOD__ );
+					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE 'documentation:" . $dbr->strencode(strtolower( $productName ) . ':' . strtolower( $manualName ) . ':' . strtolower( $topicName )) . ":%{$langextra}'",
+							"cl_to = 'V:" . $dbr->strencode($productName . ':' . $versionSelectedName . ':' . $language) . "'" ), __METHOD__ );
 
 			if( !$res->numRows( ))
 			{
@@ -659,10 +734,12 @@ class PonyDocsExtension
 		 */
 		$matches = array( );
 
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*)/i', $title->__toString( ), $match ))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']*):([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']*)TOC([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']*):([a-zA-Z]{2})/i', $title->__toString( ), $match ))
 		{
 			$dbr = wfGetDB( DB_MASTER );
 			$topics = array( );
+
+			$tocLanguage = $match[4];
 
 			/**
 			 * Detect duplicate topic names.
@@ -682,9 +759,10 @@ class PonyDocsExtension
 			/**
 			 * Create any topics which do not already exist in the saved TOC.
 			 */
-			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
-			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2] );
+			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1], $match[4] );
+			$pManual = PonyDocsProductManual::GetManualByShortName( $pProduct->getShortName(), $match[2], $match[4] );
 			$pManualTopic = new PonyDocsTopic( $article );
+			$pTopicLanguage = $pManualTopic->getLanguage();
 
 			$manVersionList = $pManualTopic->getProductVersions( );
 			if( !sizeof( $manVersionList ))
@@ -693,9 +771,9 @@ class PonyDocsExtension
 			}
 
 			// Clear all TOC cache entries for each version.
-			if($pManual) {
+			if ($pManual) {
 				foreach($manVersionList as $version) {
-					PonyDocsTOC::clearTOCCache($pManual, $version, $pProduct);
+					PonyDocsTOC::clearTOCCache($pManual, $version, $pProduct, $tocLanguage);
 					PonyDocsProductVersion::clearNAVCache($version);
 				}
 			}
@@ -709,10 +787,10 @@ class PonyDocsExtension
 
 				$versionIn = array( );
 				foreach( $manVersionList as $pV )
-					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionName( );
+					$versionIn[] = $pProduct->getShortName() . ':' . $pV->getVersionName( ) . ':' . $tocLanguage;
 
 				$res = $dbr->select( 'categorylinks', 'cl_sortkey',
-					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%'",
+					array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2] . ":" . $wikiTopic )) . ":%:".$tocLanguage."'",
 							"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ), __METHOD__ );
 
 				$topicName = '';
@@ -721,7 +799,7 @@ class PonyDocsExtension
 					/**
 					 * No match -- so this is a "new" topic.  Set name and create.
 					 */
-					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':' . $earliestVersion->getVersionName( );
+					$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $match[1] . ':' . $match[2]. ':' . $wikiTopic . ':' . $earliestVersion->getVersionName( ) . ':' . $tocLanguage;
 					//die( $topicName );
 
 					$topicArticle = new Article( Title::newFromText( $topicName ));
@@ -729,7 +807,7 @@ class PonyDocsExtension
 					{
 						$content = 	"= " . $m[1] . "=\n\n" ;
 						foreach( $manVersionList as $pVersion )
-							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionName( ) . ']]';
+							$content .= '[[Category:V:' . $pProduct->getShortName() . ':' . $pVersion->getVersionName( ) . ':' . $tocLanguage . ']]';
 
 						$topicArticle->doEdit( $content, 'Auto-creation of topic ' . $topicName . ' via TOC ' . $title->__toString( ), EDIT_NEW );
 						if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicName from TOC " . $title->__toString( ));}
@@ -758,7 +836,7 @@ class PonyDocsExtension
 	{
 		$title = $article->getTitle( );
 
-		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title->__toString( ), $match ))
+		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*):([a-zA-Z]{2})/i', $title->__toString( ), $match ))
 		{
 			/**
 			 * Extract our version and manual objects.  From it build the cache key then REMOVE IT.  THEN, create our PonyDocsTOC
@@ -766,18 +844,19 @@ class PonyDocsExtension
 			 */
 			$cache = PonyDocsCache::getInstance( );
 
-			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1] );
-			$pManual = PonyDocsProductManual::GetManualByShortName( $match[1], $match[2] );
+			$pProduct = PonyDocsProduct::GetProductByShortName( $match[1], $match[4] );
+			$pManual = PonyDocsProductManual::GetManualByShortName( $match[1], $match[2], $match[4] );
 			$pVersion = PonyDocsProductVersion::GetVersionByName( $match[1], $match[3] );
+			$pLanguage = $match[4];
 
-			$tocKey = PonyDocsTOC . '_' . $pProduct->getShortName() . '_' . $pManual->getShortName( ) . '_' . $pVersion->getName( );
-			
+			$tocKey = PonyDocsTOC . '_' . $pProduct->getShortName() . '_' . $pManual->getShortName( ) . '_' . $pVersion->getName( ) . '_' . $pLanguage;
+
 			$cache->remove( $tocKey );
 
 			// Clear any PDF for this manual
 			PonyDocsPdfBook::removeCachedFile($pProduct->getShortName(), $pManual->getShortName(), $pVersion->getName());
 
-			$pTOC = new PonyDocsTOC( $pManual, $pVersion, $pProduct );
+			$pTOC = new PonyDocsTOC( $pManual, $pVersion, $pProduct, $pLanguage);
 			$pTOC->loadContent( );
 		}
 
@@ -883,18 +962,18 @@ class PonyDocsExtension
 
 			$q = '';
 
-			if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/', $title->__toString( ), $titleMatch ))
+			if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([:^]+):([:^]+):([:^]+):([:^]+):([:^]+)/', $title->__toString( ), $titleMatch ))
 			{
 				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
 						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':' . $titleMatch[3] )) . ":%' " .
 						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':' . $titleMatch[3] . ':' . $titleMatch[4] )) . "' " .
 						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
 			}
-			else if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/', $title->__toString( ), $titleMatch ))
+			else if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*):(.*)/', $title->__toString( ), $titleMatch ))
 			{
 				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
-						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' )) . "%' " .
-						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' . $titleMatch[3] )) . "' " .
+						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' )) . "%:".$titleMatch[4]."' " .
+						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' . $titleMatch[3] . ":" . $titleMatch[4] )) . "' " .
 						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
 			}
 			else
@@ -1249,15 +1328,17 @@ HEREDOC;
 	{
 		global $wgTitle, $wgOut;
 		
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $wgTitle->__toString( ), $match ))
+		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*):(.*)/i', $wgTitle->__toString( ), $match ))
 			return true;
 
 		if( !$wgTitle->exists( ))
 		{
 			$productName = PonyDocsProduct::GetSelectedProduct();
 			$versionName = PonyDocsProductVersion::GetSelectedVersion($productName);
+			$language    = $match[4];
+
 			$script = 	"function ponydocsOnLoad() {
-							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . "]]\");
+							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . ':' . $language . "]]\");
 						};";
 			$wgOut->addInLineScript( $script );
 		}
@@ -1300,7 +1381,7 @@ HEREDOC;
 		$dbr = wfGetDB( DB_SLAVE );
 
 		// Ignore anything not of the form Documentation:<product>:<manual>:<topic>:<version>.
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $wgTitle->__toString( ), $match ))
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([:^]+):([:^]+):([:^]+):([:^]+):([:^]+)/i', $wgTitle->__toString( ), $match ))
 			return true;
 
 		$baseTopic = sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
@@ -1474,7 +1555,7 @@ HEREDOC;
 
 		// We want to do link substitution in all namespaces now.
 		$doWikiLinkSubstitution = true;
-		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/');
+		$matches = array( 	'/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([:^]+):([:^]+):([:^]+):([:^]+):([:^]+)/');
 
 		$doStripH1 = false;
 		foreach( $matches as $m )
@@ -1697,7 +1778,7 @@ HEREDOC;
 			if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( )))
 				return true;
 			// Okay, we ARE in the documentation namespace.  Let's try and rewrite 
-			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" . PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3", $url);
+			$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([:^]+)$/i', '$5/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . PonyDocsProduct::GetSelectedProduct() . "/" . PonyDocsProductVersion::GetSelectedVersion(PonyDocsProduct::GetSelectedProduct()) . "/$2/$3", $url);
 			return true;
 		}
 		else if(preg_match('/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString())) {
@@ -1709,7 +1790,7 @@ HEREDOC;
 			// Okay, we're not in the documentation namespace, but we ARE 
 			// looking at a documentation namespace title.  So, let's rewrite
 			if(!$editing) {
-				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$1/$4/$2/$3", $url);
+				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([:^]+)$/i', '$5/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$1/$4/$2/$3", $url);
 			}
 			else {
 				// Then we should inject the user's current version into the 
@@ -1745,7 +1826,7 @@ HEREDOC;
 						}
 					}
 				}
-				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+)$/i', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$currentProduct/$targetVersion/$2/$3", $url);
+				$url = preg_replace('/' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([:^]+)$/i', "$5/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . "/$currentProduct/$targetVersion/$2/$3", $url);
 			}
 			return true;
 		}
@@ -1840,9 +1921,9 @@ HEREDOC;
 			// Check referrer and see if we're coming from a doc page.
 			// If so, we're editing it, so we should force the version 
 			// to be from the referrer.
-			if(isset($_SERVER['HTTP_REFERER']) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', $_SERVER['HTTP_REFERER'], $match)) {
-				$targetProduct = $match[1];
-				$targetVersion = $match[3];
+			if(isset($_SERVER['HTTP_REFERER']) && preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/(\w+)\/((latest|[\w\.]*)\/)?(\w+)\/?/i', $_SERVER['HTTP_REFERER'], $match)) {
+				$targetProduct = $match[3];
+				$targetVersion = $match[5];
 				if($targetVersion == "latest") {
 					PonyDocsProductVersion::SetSelectedVersion($targetProduct, PonyDocsProductVersion::GetLatestReleasedVersion($targetProduct)->getVersionName());
 				}
@@ -1858,18 +1939,18 @@ HEREDOC;
 		// That regex sucks! How do you know if "Beta" is a version or a manual? What if both exist with same name?
 		// additionally it catches versions with dots like 1.1 but not without like 1
 		// it should only catch the full manual URL - product/version/manual - we cannot support WEB-3862
-		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/(([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/)(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
-			$targetProduct = $match[1];
-			$targetManual = $match[4];
-			$targetVersion = $match[3];
+		if(preg_match('/^' . str_replace("/", "\/", $wgScriptPath) . '\/(([a-zA-Z]{2})\/)?' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '\/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)\/(([' . PONYDOCS_PRODUCTVERSION_LEGALCHARS . ']+)\/)(\w+)\/?$/i', $_SERVER['PATH_INFO'], $match)) {
+			$targetProduct = $match[3];
+			$targetManual = $match[6];
+			$targetVersion = $match[5];
+			$targetLanguage = !empty($match[2]) ? strtolower($match[2]) : PONYDOCS_LANGUAGE_DEFAULT;
 
-			$p = PonyDocsProduct::GetProductByShortName($targetProduct);
+			$p = PonyDocsProduct::GetProductByShortName($targetProduct, $targetLanguage);
 
 			if (!($p instanceof PonyDocsProduct)) {
 				$wgHooks['BeforePageDisplay'][] = "PonyDocsExtension::handle404";
 				return false;
 			}
-
 
 			// User wants to find first topic in a requested manual.
 			// Load up versions
@@ -1893,10 +1974,11 @@ HEREDOC;
 				header('Location: ' . $wgScriptPath . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);
 				die();
 			}
+
 			// Okay, the version is valid, let's set the user's version.
 			PonyDocsProductVersion::SetSelectedVersion($targetProduct, $ver->getVersionName());
-			PonyDocsProductManual::LoadManualsForProduct($targetProduct);
-			$man = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual);
+			PonyDocsProductManual::LoadManualsForProduct($targetProduct, true, $targetLanguage);
+			$man = PonyDocsProductManual::GetManualByShortName($targetProduct, $targetManual, $targetLanguage);
 			if(!$man) {
 				// Rewrite to Main documentation
 				if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $wgScriptPath/" . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME);}
@@ -1904,7 +1986,7 @@ HEREDOC;
 				die();
 			}
 			// Get the TOC out of here! heehee
-			$toc = new PonyDocsTOC($man, $ver, $p);
+			$toc = new PonyDocsTOC($man, $ver, $p, $targetLanguage);
 			list($toc, $prev, $next, $start) = $toc->loadContent();
 			foreach($toc as $entry) {
 				if(isset($entry['link']) && $entry['link'] != "") {
@@ -1915,7 +1997,7 @@ HEREDOC;
 					die();
 				}
 			}
-			die();
+			die('Ugh, we should not have gotten here!');
 		}
 		return true;
 	}
@@ -1989,7 +2071,7 @@ HEREDOC;
 		// Update doc links
 		PonyDocsExtension::updateOrDeleteDocLinks("update", $article, $text);
 
-		if( !preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
+		if( !preg_match( '/^([a-zA-Z]{2})?' . PONYDOCS_DOCUMENTATION_PREFIX . '/i', $title->__toString( ), $matches )) {
 			return true;
 		}
 		// Okay, article is in doc namespace
@@ -2016,7 +2098,7 @@ HEREDOC;
 		// Clear all TOC cache entries for each version.
 		if($manual) {
 			foreach($manVersionList as $version) {
-				PonyDocsTOC::clearTOCCache($manual, $version, $product);
+				PonyDocsTOC::clearTOCCache($manual, $version, $product, $topic->getLanguage());
 				PonyDocsProductVersion::clearNAVCache($version);
 			}
 		}

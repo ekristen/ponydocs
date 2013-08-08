@@ -60,11 +60,14 @@ class PonyDocsTopic
 	public function __construct( Article &$article )
 	{
 		$this->pArticle = $article;
-		//$this->pArticle->loadContent( );
-		//echo '<pre>' . $article->getContent( ) . '</pre>';
 		$this->pTitle = $article->getTitle( );
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $this->pTitle->__toString( )))
+
+
+		if (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString(), $matches)) {
 			$this->mIsDocumentationTopic = true;
+		}
+
+		$this->pLanguage = $matches[5];
 	}
 
 	/**
@@ -85,6 +88,10 @@ class PonyDocsTopic
 	public function & getTitle( )
 	{
 		return $this->pTitle;
+	}
+
+	public function getLanguage() {
+		return $this->pLanguage;
 	}
 
 	/**
@@ -159,13 +166,14 @@ class PonyDocsTopic
 
 		while ( $row = $dbr->fetchObject( $res ))
 		{
-			if( preg_match( '/^v:(.*):(.*)/i', $row->cl_to, $match ))
+			if( preg_match( '/^v:(.*):(.*):(.*)/i', $row->cl_to, $match ))
 			{
 				$v = PonyDocsProductVersion::GetVersionByName( $match[1], $match[2] );
 				if( $v )
 					$tempVersions[] = $v;
 			}
 		}
+
 		// Sort by Version, by doing a natural sort
 		// Also remove any duplicates.
 		/// FIXME - what is this really doing? tempVersions index is int per above code!
@@ -191,13 +199,13 @@ class PonyDocsTopic
 	 * @param string $baseTopic
 	 * @param string $product
 	 */
-	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product )
+	static public function GetTopicNameFromBaseAndVersion( $baseTopic, $product, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		$dbr = wfGetDB( DB_SLAVE );
 
 		$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%'",
-					"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . "'" ), __METHOD__ );
+			array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $baseTopic )) . ":%:".$language."'",
+					"cl_to = 'V:" . $product . ':' . PonyDocsProductVersion::GetSelectedVersion( $product ) . ':' . $language . "'" ), __METHOD__ );
 
 		if(!$res->numRows( ))
 			return false;
@@ -219,7 +227,6 @@ class PonyDocsTopic
 	static public function FindH1ForTitle( $title )
 	{
 		$article = new Article( Title::newFromText( $title ), 0);
-		$content = $article->loadContent( );
 
 		//$content = preg_replace( '/\<nowiki\>(.*)\<\/nowiki\>/i', '', $article->getContent( ));		
 		if( !preg_match( '/^\s*=(.*)=/D', $article->getContent( ), $matches ))
@@ -358,7 +365,7 @@ class PonyDocsTopic
 	 */
 	public function getVersionClass( )
 	{
-		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $matches))
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)(:(.*))?/i', $this->pTitle->__toString( ), $matches))
 			// This is not a documentation title.
 			return "unknown";
 		$productName = $matches[1];
@@ -409,13 +416,49 @@ class PonyDocsTopic
 	 */
 	public function getBaseTopicName( )
 	{
-		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*)/i', $this->pTitle->__toString( ), $match ))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)?/i', $this->pTitle->__toString( ), $match ))
 		{
 			return sprintf( PONYDOCS_DOCUMENTATION_PREFIX . '%s:%s:%s', $match[1], $match[2], $match[3] );
 		}
 
 		return '';
 	}
+	
+	
+	public function getTranslations( ) {
+		global $wgISO639LanguageCodes;
+		$dbr = wfGetDB( DB_SLAVE );
+		$revision = $this->pArticle->mRevision;
+
+		if (!preg_match( '/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)?/i', $this->pTitle->__toString( ), $matches ))
+			return;
+
+		$ponydocs = PonyDocsWiki::getInstance($matches[1]);
+		$current_lang = $ponydocs->getCurrentLanguage();
+
+		$new_title = str_replace(":{$current_lang}", "", $this->pTitle->__toString());
+
+		//$res = $dbr->select( 'categorylinks', 'cl_to', "cl_from = '" . $revision->mPage . "'", __METHOD__ );
+		$res = $dbr->select( 'categorylinks', 'cl_to',
+							"cl_sortkey LIKE '" . $dbr->strencode( $new_title ) . "%'", __METHOD__ );
+
+		$tempLanguages = array();
+		while ( $row = $dbr->fetchObject( $res ))
+		{
+			if( preg_match( '/^V:(.*):(.*):(.*)/i', $row->cl_to, $match ))
+			{
+				if ($current_lang == strtolower($match[3]))
+					continue;
+
+				$upperlang = strtoupper($match[3]);
+
+				$tempLanguages[$match[3]] = array('name' => $wgISO639LanguageCodes[$match[3]], 'href' => "{$upperlang}/Documentation/{$matches[1]}/{$matches[4]}/{$matches[2]}/{$matches[3]}");
+			}
+		}
+
+		return $this->languages = $tempLanguages;
+	}
+	
 };
 
 /**

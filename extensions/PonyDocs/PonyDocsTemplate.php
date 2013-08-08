@@ -1,5 +1,20 @@
 <?php
 
+class PonyDocsSkinTemplate extends SkinTemplate {
+	// We are going to totally overwrite this functionality to fix a weird issue
+	public function setTitle($t) {
+		global $wgTitle;
+		$this->mTitle = $wgTitle;
+	}
+
+	function printSource() {
+		return '';
+	}
+	
+}
+
+
+
 /**
  * PonyDocsTemplate Class
  * 
@@ -15,6 +30,9 @@ class PonyDocsTemplate extends QuickTemplate {
 
 	var $templateDirectory = 'templates';
 
+	var $_pageTitle = 'WikiDocs';
+
+
 	/**
 	 * This lets you map full titles or namespaces to specific PHP template files and prep methods.  The special '0' index
 	 * is the default if not found.  Prefix title mappings with 'T:' and namespace mappings with 'NS:'.  Currently if inside
@@ -22,11 +40,24 @@ class PonyDocsTemplate extends QuickTemplate {
 	 *
 	 * @var array
 	 */
-	private $_methodMappings = array(
-		0 => array( 'init' => '', 'tpl' => 'default.tpl.php' ),
-		'T:Documentation' => array( 'init' => 'prepareDocumentation', 'tpl' => 'home.tpl.php' ),
-		'NS:Documentation' => array( 'init' => 'prepareDocumentation', 'tpl' => 'documentation.tpl.php' ),
-	);
+	private $_methodMappings = array();
+
+	function __construct() {
+		parent::__construct();
+
+		$this->_methodMappings = array(
+			0 => array( 'init' => '', 'tpl' => 'default.tpl.php' ),
+			// Any title that is actually a page and in the PONYDOCS namespace
+			'NS:'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME => array( 'init' => 'prepareDocumentation', 'tpl' => 'documentation.tpl.php' ),
+			// Matches /Documentation page
+			'/^T:(([a-zA-Z]{2})\/)?'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."(\/)?$/" => array( 'init' => 'prepareDocumentation', 'tpl' => 'home.tpl.php' ),
+			// Matches /Documentation/PRODUCT page
+			"/^T:(([a-zA-Z]{2})\/)?".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."\/([".PONYDOCS_PRODUCT_LEGALCHARS."]+)(\/)?$/" => array('init' => 'prepareDocumentation', 'tpl' => 'product.tpl.php'),
+			// Matches /Documentation/PRODUCT/VERSION page
+			"/^T:(([a-zA-Z]{2})\/)?".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."\/([".PONYDOCS_PRODUCT_LEGALCHARS."]+)(\/([".PONYDOCS_PRODUCTVERSION_LEGALCHARS."]+))?$/" => array('init' => 'prepareDocumentation', 'tpl' => 'product.tpl.php')
+		);
+	}
+
 
 
 	/**
@@ -36,6 +67,7 @@ class PonyDocsTemplate extends QuickTemplate {
 	function preSetup() {
 		global $wgUser, $wgExtraNamespaces, $wgTitle, $wgArticlePath, $IP;
 		global $wgRequest, $wgRevision, $action, $wgRequest, $wgSitename;
+		global $wgPonyDocsLanguage;
 
 		$this->globals = new stdClass();
 		$this->globals->wgRequest = $wgRequest;
@@ -50,10 +82,10 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		$this->action = $action;
 
-		PonyDocsProduct::LoadProducts();
-		$this->data['selectedProduct'] = PonyDocsProduct::GetSelectedProduct( );
+		PonyDocsProduct::LoadProducts(false, $wgPonyDocsLanguage);
+		$this->data['selectedProduct'] = PonyDocsProduct::GetSelectedProduct( $wgPonyDocsLanguage );
 		PonyDocsProductVersion::LoadVersionsForProduct($this->data['selectedProduct']);
-		PonyDocsProductManual::LoadManualsForProduct($this->data['selectedProduct']);
+		PonyDocsProductManual::LoadManualsForProduct($this->data['selectedProduct'], false, $wgPonyDocsLanguage );
 
 		$this->ponydocs = $ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
 
@@ -61,23 +93,32 @@ class PonyDocsTemplate extends QuickTemplate {
 		$this->data['versions'] = $ponydocs->getVersionsForProduct( $this->data['selectedProduct'] );
 		$this->data['namespaces'] = $wgExtraNamespaces;
 		$this->data['selectedVersion'] = PonyDocsProductVersion::GetSelectedVersion( $this->data['selectedProduct'] );
-		$this->data['pVersion'] = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion']);
+		$this->data['pVersion'] = PonyDocsProductVersion::GetVersionByName($this->data['selectedProduct'], $this->data['selectedVersion'], $wgPonyDocsLanguage);
+		$this->data['selectedLanguage'] = $wgPonyDocsLanguage;
+
 		// TODO: FIX -- Disabled due to wgScript and thispage not being set?
 		//$this->data['versionurl'] = $this->data['wgScript'] . '?title=' . $this->data['thispage'] . '&action=changeversion';
 
 		if (PONYDOCS_SESSION_DEBUG) {
 			error_log("DEBUG [" . __METHOD__ . "] selected product/version is set to " . $this->data['selectedProduct'] . "/" . $this->data['selectedVersion']);
 		}
+/*
+		$this->_methodMappings["/^T:(([a-zA-Z]{2})\/)?".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."\/([".PONYDOCS_PRODUCT_LEGALCHARS."]+)(\/([".PONYDOCS_PRODUCTVERSION_LEGALCHARS."]))?$/"] = array('init' => 'prepareDocumentation', 'tpl' => 'product.tpl.php');
 
-		foreach (PonyDocsProduct::GetDefinedProducts() as $product) {
+		foreach (PonyDocsProduct::GetDefinedProducts($this->data['selectedLanguage']) as $product) {
 			$this->_methodMappings["T:Documentation/{$product->getShortName()}"] = array('init' => 'prepareDocumentation', 'tpl' => 'product.tpl.php');
 
 			foreach (PonyDocsProductVersion::GetVersions($product->getShortName()) as $version) {
 				$this->_methodMappings["T:Documentation/{$product->getShortName()}/{$version->getVersionName()}"] = array('init' => 'prepareDocumentation', 'tpl' => 'product.tpl.php');
 			}
 		}
+*/
 
-		if($this->data['nscanonical'] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME || $wgTitle->__toString() == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME || preg_match('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/', $wgTitle->__toString())) {
+		if($this->data['nscanonical'] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+		|| $wgTitle->__toString() == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME
+		|| preg_match('/^' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/', $wgTitle->__toString())
+		|| preg_match('/^(([a-zA-Z]{2})\/)?'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'/', $wgTitle->__toString())
+		) {
 			$this->inDocumentation = true;
 		}
 
@@ -92,6 +133,8 @@ class PonyDocsTemplate extends QuickTemplate {
 	 * from the QuickTemplate OutputPage function.
 	 */
 	function execute() {
+		global $wgOut;
+
 		$this->preSetup();
 
 		$this->skin = $skin = $this->data['skin'];
@@ -105,12 +148,20 @@ class PonyDocsTemplate extends QuickTemplate {
 		 * which we are in determines the sub-template, which is named 'ns<Namespace>'.  It defaults to our
 		 * nsDefault.php template. 
 		 */
+		$this->template = $this->_methodMappings[0];
+
 		$idx = $this->data['nscanonical'] ? 'NS:'.$this->data['nscanonical'] : 'T:' . $this->globals->wgTitle->__toString( );
-		if( !isset( $this->_methodMappings[$idx] )) {
-			$this->template = $this->_methodMappings[0];
-		}
-		else {
-			$this->template = $this->_methodMappings[$idx];
+
+		foreach ($this->_methodMappings as $regex => $mappings) {
+			if (preg_match($regex, $idx, $match)) {
+				$this->template = $mappings;
+				break;
+			}
+
+			if ($idx === $regex) {
+				$this->template = $mappings;
+				break;
+			}
 		}
 
 		// Call our init function if it exists.
@@ -140,12 +191,13 @@ class PonyDocsTemplate extends QuickTemplate {
 
 
 	public function prepareDocumentation() {
-		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser;
+		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser, $wgPonyDocsLanguage;
+
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!
 		 */
-		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'] );
-		$this->data['manuals'] = $ponydocs->getManualsForProduct( $this->data['selectedProduct'] );
+		$ponydocs = PonyDocsWiki::getInstance( $this->data['selectedProduct'], $wgPonyDocsLanguage );
+		$this->data['manuals'] = $ponydocs->getManualsForProduct( $this->data['selectedProduct'] , $wgPonyDocsLanguage );
 
 		/**
 		 * Adjust content actions as needed, such as add 'view all' link.
@@ -186,28 +238,32 @@ class PonyDocsTemplate extends QuickTemplate {
 		/**
 		 * This isn't a specific topic+version -- handle appropriately.
 		 */
-		if( sizeof( $pieces ) < 4 )
+		if( sizeof( $pieces ) < 5 )
 		{
-			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX, $wgTitle->__toString( )))
+			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX . ":$wgPonyDocsLanguage" , $wgTitle->__toString( )))
 			{
 				$this->data['titletext'] = 'Versions Management - '.$this->data['selectedProduct'];
 				$this->data['headertext'] = $this->data['titletext'];
 				$wgOut->prependHTML( '<div class="alert alert-success' . $helpClass . '"><strong>Instructions:</strong><br><i>* Use <strong>{{#version:name|status}}</strong> to define a new version, where status is <strong>released</strong>, <strong>unreleased</strong>, or <strong>preview</strong>.  Valid chars in version name are A-Z, 0-9, period, comma, and dash.</i></div>');
 			}
-			else if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgTitle->__toString( )))
+			else if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTMANUAL_SUFFIX. ":{$this->data['selectedLanguage']}", $wgTitle->__toString( )))
 			{
 				$this->data['titletext'] = 'Manuals Management - '.$this->data['selectedProduct'];
 				$this->data['headertext'] = $this->data['titletext'];
 				$wgOut->prependHTML( '<div class="alert alert-success' . $helpClass . '"><strong>Instructions:</strong><br><i>* Use <strong>{{#manual:manualShortName|displayName|Description}}</strong> to define a new manual.  If you omit display name, the short name will be used in links.</i></div>');
 			}
-			else if ( !strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE, $wgTitle->__toString( )))
+			else if ( !strcmp( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE . ":{$this->data['selectedLanguage']}", $wgTitle->__toString( )))
 			{
 				$this->data['titletext'] = 'Products Management';
 				$this->data['headertext'] = $this->data['titletext'];
 				$wgOut->prependHTML("</div>");
-				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* <strong>NOTE</strong>: The order on this page dictates the order the products will appear elsewhere.</span>');
+				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* The first product listed here will be the DEFAULT product for WikiDocs.</span>');
+				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* The order on this page dictates the order the products will appear elsewhere.</span>');
+				$wgOut->prependHTML('<strong>Warning</strong>');
+				$wgOut->prependHTML('<div class="alert alert-warning">');
+				$wgOut->prependHTML('</div>');
 				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* If you leave displayName empty, productShortName will be used in links.</i></span>');
-				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* displayName, description and parent can be left empty.</i></span>');
+				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* parent can be left empty. Example: {{#product:test|Test|Test|}} (note the final "|")</i></span>');
 				$wgOut->prependHTML('<br><span class="' . $helpClass . '"><i>* Use {{#product:productShortName|displayName|description|parent}} to define a new product.</i></span>');
 				$wgOut->prependHTML('<strong>Instructions</strong>');
 				$wgOut->prependHTML('<div class="alert alert-success">');
@@ -223,7 +279,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				$wgOut->prependHTML( '<strong>Instructions</strong>' );
 				$wgOut->prependHTML( '<div class="alert alert-success">');
 			}
-			else if ( count( $pieces ) >= 3 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ))
+			else if ( count( $pieces ) >= 4 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ))
 			{
 				$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
 				if( $pManual )
@@ -237,8 +293,15 @@ class PonyDocsTemplate extends QuickTemplate {
 			else
 			{
 				$subpieces = explode("/", $wgTitle->__toString( ));
-				if (count($subpieces) == 2 && $subpieces[0] == 'Documentation') {
-					$product = PonyDocsProduct::GetProductByShortName($subpieces[1]);
+				if (count($subpieces) >= 2) {
+					if ($subpieces[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
+						$subprod = $subpieces[1];
+					}
+					else if ($subpieces[1] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME) {
+						$subprod = $subpieces[2];
+					}
+
+					$product = PonyDocsProduct::GetProductByShortName($subprod, $wgPonyDocsLanguage);
 					$this->data['headertext'] = $product->getLongName() . ' <small>Manuals</small>';
 				}
 				else {
@@ -250,7 +313,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		else
 		{
 			$product = PonyDocsProduct::GetProductByShortName(PonyDocsProduct::GetSelectedProduct());
-			$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
+			$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2], $pieces[5] );
 			if( $pManual )
 				$this->data['manualname'] = $pManual->getLongName( );
 			else
@@ -279,9 +342,10 @@ class PonyDocsTemplate extends QuickTemplate {
 		{
 			$p = PonyDocsProduct::GetProductByShortName( $this->data['selectedProduct'] );
 			$v = PonyDocsProductVersion::GetVersionByName( $this->data['selectedProduct'], $this->data['selectedVersion'] );
-			$toc = new PonyDocsTOC( $pManual, $v, $p );
+			$toc = new PonyDocsTOC( $pManual, $v, $p, $this->data['selectedLanguage'] );
 			list( $this->data['manualtoc'], $this->data['tocprev'], $this->data['tocnext'], $this->data['tocstart'] ) = $toc->loadContent( );
 			$this->data['toctitle'] = $toc->getTOCPageTitle();
+			$this->data['toctranslations'] = $toc->getTranslations();
 		}
 
 		/**
@@ -305,6 +369,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			$this->data['inlinetoc'] = $topic->getSubContents( );
 			$this->data['versionclass'] = $topic->getVersionClass( );
 			$this->data['versionGroupMessage'] = $this->data['pVersion']->getVersionGroupMessage();
+			$this->data['topictranslations'] = $topic->getTranslations();
 
 			/**
 			 * Sort of a hack -- we only use this right now when loading a TOC page which is new/does not exist.  When this
@@ -484,7 +549,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		$menu = array(
 			'items' => array(
 				array('label' => 'Documentation Admin'),
-				array('label' => 'Manage Products', 'url' => '/Documentation:Products'),
+				array('label' => 'Manage Products', 'url' => '/Documentation:Products:'.PONYDOCS_LANGUAGE_DEFAULT),
 				array('label' => 'Branch and Inherit', 'url' => '/Special:BranchInherit'),
 				array('label' => 'Products'),
 			)
@@ -496,7 +561,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				$subitems = array(
 					array('label' => 'Product Admin'),
 					array('label' => 'Manage Versions', 'url' => '/Documentation:'.$product->getShortName().':Versions'),
-					array('label' => 'Manage Manuals', 'url' => '/Documentation:'.$product->getShortName().':Manuals'),
+					array('label' => 'Manage Manuals', 'url' => '/Documentation:'.$product->getShortName().':Manuals:'.PONYDOCS_LANGUAGE_DEFAULT),
 					array('label' => 'Product Versions'),
 				);
 
@@ -506,8 +571,8 @@ class PonyDocsTemplate extends QuickTemplate {
 					$manuals = PonyDocsProductManual::getDefinedManuals($product->getShortName());
 					if (isset($manuals) && !empty($manuals)) {
 						foreach (PonyDocsProductManual::getDefinedManuals($product->getShortName()) as $manual) {
-							$subsubitems[] = array('label' => $manual->getLongName());
-							$subsubitems[] = array('label' => 'Manage Table of Contents', 'url' => '/Documentation:'.$product->getShortName().':'.$manual->getShortName().'TOC'.$version->getVersionName());
+							$subsubitems[] = array('label' => $manual->getLongName() . ' (Language: '.PONYDOCS_LANGUAGE_DEFAULT.')');
+							$subsubitems[] = array('label' => 'Manage Table of Contents', 'url' => '/Documentation:'.$product->getShortName().':'.$manual->getShortName().'TOC'.$version->getVersionName().':'.PONYDOCS_LANGUAGE_DEFAULT);
 						}
 					}
 
@@ -583,11 +648,36 @@ class PonyDocsTemplate extends QuickTemplate {
 
 
 	private function createBreadcrumbMenu() {
+		global $wgLanguageNames, $wgISO639LanguageCodes;
+
 		$breadcrumbs = array();
 
 		$parts = explode(":", $this->globals->wgTitle->__toString());
 
-		if (count($parts) > 4) {
+		if (count($parts) > 1) {
+			if (preg_match('/^([a-zA-Z]{2})$/', $parts[count($parts)-1], $match)) {
+				$language = array_pop($parts);
+			}
+			else {
+				$language = PONYDOCS_LANGUAGE_DEFAULT;
+			}
+		} else {
+			$sparts = explode("/", $this->globals->wgTitle->__toString());
+
+			if (preg_match("/^([a-zA-Z]{2})\//", $sparts[0], $match))
+				$language = strtolower(array_shift($sparts));
+			else
+				$language = PONYDOCS_LANGUAGE_DEFAULT;
+		}
+
+		$languageName = $wgLanguageNames[$language];
+
+		if ($language != PONYDOCS_LANGUAGE_DEFAULT) {
+			$breadcrumbs[] = array('label' => $languageName);
+			$pieces[] = strtoupper($language);
+		}
+
+		if (count($parts) > 4 && $parts[0] == 'Documentation') {
 			$page_title = PonyDocsTopic::FindH1ForTitle( $this->globals->wgTitle->__toString() );
 
 			$parts = array($parts[0], $parts[1], $parts[4], $parts[2], $parts[3]);
@@ -605,11 +695,11 @@ class PonyDocsTemplate extends QuickTemplate {
 				$new_title = Title::newFromText( $href );
 
 				if ($x == 1) {
-					$breadcrumbProduct = PonyDocsProduct::GetProductByShortName($parts[$x]);
+					$breadcrumbProduct = PonyDocsProduct::GetProductByShortName($parts[$x], $language);
 					$breadcrumbs[] = array('label' => $breadcrumbProduct->getLongName(), 'url' => $new_title->getFullUrl());
 				}
 				else if ($x == 3) {
-					$breadcrumbManual = PonyDocsProductManual::GetManualByShortName($breadcrumbProduct->getShortName(), $parts[$x]);
+					$breadcrumbManual = PonyDocsProductManual::GetManualByShortName($breadcrumbProduct->getShortName(), $parts[$x], $language);
 					$breadcrumbs[] = array('label' => $breadcrumbManual->getLongName(), 'url' => $new_title->getFullUrl());
 				}
 				else if ($x == 2) {
@@ -632,11 +722,11 @@ class PonyDocsTemplate extends QuickTemplate {
 				$new_title = Title::newFromText( $href );
 
 				if ($x == 1) {
-					$breadcrumbProduct = PonyDocsProduct::GetProductByShortName($parts[$x]);
+					$breadcrumbProduct = PonyDocsProduct::GetProductByShortName($parts[$x], $language);
 					$breadcrumbs[] = array('label' => $breadcrumbProduct->getLongName(), 'url' => $new_title->getFullUrl());
 				}
 				else if ($x == 3) {
-					$breadcrumbManual = PonyDocsProductManual::GetManualByShortName($breadcrumbProduct->getShortName(), $parts[$x]);
+					$breadcrumbManual = PonyDocsProductManual::GetManualByShortName($breadcrumbProduct->getShortName(), $parts[$x], $language);
 					$breadcrumbs[] = array('label' => $breadcrumbManual->getLongName(), 'url' => $new_title->getFullUrl());
 				}
 				else if ($x != count($parts)-1) {
@@ -674,8 +764,25 @@ class PonyDocsTemplate extends QuickTemplate {
 		else {
 			$parts = explode("/", $this->globals->wgTitle->__toString());
 
-			if (count($parts) > 1 && $parts[0] == 'Documentation') {
-				$pieces = array();
+			if (count($parts) > 1) {
+				if (preg_match('/^([a-zA-Z]{2})$/', $parts[0], $match)) {
+					$language = strtolower(array_shift($parts));
+				}
+				else {
+					$language = PONYDOCS_LANGUAGE_DEFAULT;
+				}
+			}
+
+			$languageName = $wgISO639LanguageCodes[$language];
+
+			$includeLang = false;
+			if ($language != PONYDOCS_LANGUAGE_DEFAULT) {
+				$includeLang = true;
+				$breadcrumbs[] = array('label' => $languageName);
+				$pieces[] = $language;
+			}
+
+			if (count($parts) > 0 && $parts[0] == PONYDOCS_DOCUMENTATION_NAMESPACE_NAME ) {
 				for ($x=0; $x<count($parts); $x++) {
 					$pieces[] = $parts[$x];
 
@@ -683,7 +790,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 					$new_title = Title::newFromText( $href );
 
-					$product = PonyDocsProduct::GetProductByShortName($parts[$x]);
+					$product = PonyDocsProduct::GetProductByShortName($parts[$x], $language);
 					$product_title = '';
 					if (isset($product)) {
 						$product_title = $product->getLongName();
@@ -723,6 +830,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		
 		return false;
 	} // end function isDocumentationAdmin
+
 
 } // end class PonyDocsTemplate extends QuickTemplate
 

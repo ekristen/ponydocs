@@ -43,6 +43,9 @@ class PonyDocsProduct
 	 */
 	protected $mDescription;
 
+
+	protected $mLanguage;
+
 	/**
 	 * Stores whether product instance is defined as static
 	 *
@@ -80,11 +83,12 @@ class PonyDocsProduct
 	 * @param string $longName   Display name for product.
 	 * @param string $status     Status for product. One of: hidden
 	 */
-	public function __construct($shortName, $longName = '', $description = '', $parent = '') {
+	public function __construct($shortName, $longName = '', $description = '', $parent = '', $language = PONYDOCS_LANGUAGE_DEFAULT) {
 		$this->mShortName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . '])/', '', $shortName );
 		$this->mLongName = strlen( $longName ) ? $longName : $shortName;
 		$this->mDescription = $description;
 		$this->mParent = $parent;
+		$this->mLanguage = $language;
 	}
 
 	public function getShortName() {
@@ -101,6 +105,10 @@ class PonyDocsProduct
 
 	public function getDescription() {
 		return $this->mDescription;
+	}
+
+	public function getLanguage() {
+		return $this->mLanguage;
 	}
 	
 	public function setStatic($static) {
@@ -120,7 +128,7 @@ class PonyDocsProduct
 	 * @return array
 	 */
 
-	static public function LoadProducts($reload = false) {
+	static public function LoadProducts($reload = false, $language = PONYDOCS_LANGUAGE_DEFAULT) {
 		/**
 		 * If we have content in our list, just return that unless $reload is true.
 		 */
@@ -131,7 +139,7 @@ class PonyDocsProduct
 		self::$sProductList = array();
 
 		// Use 0 as the last parameter to enforce getting latest revision of this article.
-		$article = new Article(Title::newFromText( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE ), 0);
+		$article = new Article(Title::newFromText( PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE . ":{$language}" ), 0);
 		$content = $article->getContent();
 
 		if( !$article->exists()) {
@@ -178,7 +186,7 @@ class PonyDocsProduct
 				// Avoid wedging the product page with a fatal error if shortName 
 				// is omitted by some crazy nihilist
 				if (isset($parameters[0]) && $parameters[0] != '') {
-					$pProduct = new PonyDocsProduct($parameters[0], $parameters[1], $parameters[2], $parameters[3]);
+					$pProduct = new PonyDocsProduct($parameters[0], $parameters[1], $parameters[2], $parameters[3], $language);
 					$pProduct->setStatic($static);
 					self::$sDefinedProductList[$pProduct->getShortName()] = $pProduct;
 					self::$sProductList[$parameters[0]] = $pProduct;
@@ -199,9 +207,9 @@ class PonyDocsProduct
 	 * @static
 	 * @return array
 	 */
-	static public function GetProducts( )
+	static public function GetProducts( $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		return self::LoadProducts( );
+		return self::LoadProducts( true, $language );
 	}
 
 	/**
@@ -210,13 +218,13 @@ class PonyDocsProduct
 	 * @static 	
 	 * @returns array
 	 */
-	static public function GetDefinedProducts( )
+	static public function GetDefinedProducts( $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
-		self::LoadProducts( );
+		self::LoadProducts( true, $language );
 		return self::$sDefinedProductList;
 	}
 
-	static public function GetDefinedProductsBySQL() {
+	static public function GetDefinedProductsBySQL( $language = PONYDOCS_LANGUAGE_DEFAULT ) {
 		global $IP;
 		require_once( "$IP/includes/GlobalFunctions.php" );
 
@@ -236,7 +244,7 @@ class PonyDocsProduct
 				WHERE
 					p.page_namespace = 100
 					AND
-					p.page_title = 'Products'";
+					p.page_title = 'Products:{$language}'";
 		$res = $dbr->query($sql);
 
 		if ($res->numRows()) {
@@ -294,10 +302,11 @@ class PonyDocsProduct
 	 * @param string $shortName
 	 * @return PonyDocsProduct&
 	 */
-	static public function GetProductByShortName( $shortName )
+	static public function GetProductByShortName( $shortName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
+		PonyDocsProduct::LoadProducts( true, $language );
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $shortName );
-		if( self::IsProduct( $convertedName ))
+		if( self::IsProduct( $convertedName, $language ))
 			return self::$sDefinedProductList[$convertedName];
 		return null;
 	}
@@ -309,11 +318,11 @@ class PonyDocsProduct
 	 * @param string $shortName
 	 * @return boolean
 	 */
-	static public function IsProduct( $shortName )
+	static public function IsProduct( $shortName, $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		// We no longer specify to reload the product data, because that's just 
 		// insanity.
-		PonyDocsProduct::LoadProducts(false);
+		PonyDocsProduct::LoadProducts( true, $language );
 		// Should just force our products to load, just in case.
 		$convertedName = preg_replace( '/([^' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/', '', $shortName );
 		return isset( self::$sDefinedProductList[$convertedName] );
@@ -346,12 +355,12 @@ class PonyDocsProduct
 	 * @static
 	 * @return string Currently selected product string.
 	 */
-	static public function GetSelectedProduct( )
+	static public function GetSelectedProduct( $language = PONYDOCS_LANGUAGE_DEFAULT )
 	{
 		global $wgUser;
 
 		$groups = $wgUser->getGroups();
-		self::LoadProducts();
+		self::LoadProducts( true, $language);
 
 		/**
 		 * Do we have the session var and is it non-zero length?  Could also check if valid here.
@@ -382,7 +391,15 @@ class PonyDocsProduct
 		if (PONYDOCS_SESSION_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] setting selected product to $p");}
 		return $p;
 	}
-	
+
+	static public function SetSelectedLanguage( $language = PONYDOCS_LANGUAGE_DEFAULT )
+	{
+		$_SESSION['wsLanguage'] = $language;
+		return $language;
+	}
+
+	static public function GetSelectedLanguage( ) { }
+
 	/**
 	 * Return an array of child products for a given product
 	 * 
@@ -393,14 +410,43 @@ class PonyDocsProduct
 	 * 
 	 * @return array  An array of child product short names
 	 */
-	static public function getChildProducts($productName) {
-		self::GetProducts();
+	static public function getChildProducts($productName, $language = PONYDOCS_LANGUAGE_DEFAULT) {
+		self::GetProducts($language);
 		$parentChildMap = self::$sParentChildMap;
 		if (isset($parentChildMap[$productName])) {
 			return $parentChildMap[$productName];
 		} else {
 			return array();
 		}
+	}
+	
+	static public function getTranslations($productName) {
+		$dbr = wfGetDB( DB_SLAVE );
+
+		self::LoadProducts();
+
+		$translations = array();
+		$langs = array();
+		$namespace_id = PONYDOCS_DOCUMENTATION_NAMESPACE_ID;
+
+		foreach (self::$sProductList as $product) {
+			$langs[] = $product->getLanguage();
+
+			$regexp_query = str_replace(PONYDOCS_DOCUMENTATION_PREFIX, '', PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE) . ':([a-zA-Z]{2})';
+
+			$res = $dbr->query("SELECT * FROM page WHERE page_namespace = '{$namespace_id}' AND page_title REGEXP '^{$regexp_query}$'");
+			if ($res->numRows() != 0) {
+				while ($row = $res->fetchObject()) {
+					if (preg_match(PONYDOCS_PRODUCTMANUAL_TITLE_REGEX, PONYDOCS_DOCUMENTATION_PREFIX . $row->page_title, $matches)) {
+						$langs[] = $matches[2];
+					}
+				}
+			}
+		}
+
+		$langs = array_unique($langs);
+
+		return $langs;
 	}
 }
 
