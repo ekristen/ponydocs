@@ -550,13 +550,15 @@ EOL;
 			if (empty($version))
 				continue;
 
-			$hrefLang = strtoupper($this->data['selectedLanguage']);
+			$hrefLang = '';
+			if ($this->data['selectedLanguage'] != PONYDOCS_LANGUAGE_DEFAULT)
+				$hrefLang = '/' . strtoupper($this->data['selectedLanguage']);
 
 			$items[] =<<<EOL
 				<li class="span6 pull-left">
 					<div class="thumbnail">
 						<div class="caption">
-							<h3><a href="/{$hrefLang}/Documentation/{$product->getShortName()}">{$product->getLongName()}</a></h3>
+							<h3><a href="{$hrefLang}/Documentation/{$product->getShortName()}">{$product->getLongName()}</a></h3>
 							<p>{$product->getDescription()}</p>
 						</div>
 					</div>

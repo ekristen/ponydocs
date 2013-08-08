@@ -551,6 +551,7 @@ class PonyDocsTemplate extends QuickTemplate {
 				array('label' => 'Documentation Admin'),
 				array('label' => 'Manage Products', 'url' => '/Documentation:Products:'.PONYDOCS_LANGUAGE_DEFAULT),
 				array('label' => 'Branch and Inherit', 'url' => '/Special:BranchInherit'),
+				array('label' => 'Documentation Export', 'url' => '/Special:DocExport'),
 				array('label' => 'Products'),
 			)
 		);

@@ -128,11 +128,10 @@ class PonyDocsExtension
 		 * This exists mainly for SEO purposes.
 		 */
 		if ($languageCode == PONYDOCS_LANGUAGE_DEFAULT && PONYDOCS_LANGUAGE_ALWAYS === false && $language_in_url == true) {
-			$new_location = str_replace($match[1], '', $_SERVER['PATH_INFO']);
+			$new_location = str_replace("//", '/', str_replace($match[1], '', $_SERVER['PATH_INFO']));
 			if (PONYDOCS_REDIRECT_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] redirecting to $defaultRedirect");}
 			header("HTTP/1.1 301 Moved Permanently");
 			header("Location: {$new_location}");
-			die();
 		}
 	}
 

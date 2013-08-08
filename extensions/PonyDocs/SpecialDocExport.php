@@ -42,7 +42,7 @@ class SpecialDocExport extends SpecialExport
 	public function execute( $par )
 	{
 		global $wgOut, $wgArticlePath, $wgScriptPath;
-		global $wgUser, $wgRequest, $wgSitename;
+		global $wgUser, $wgRequest, $wgSitename, $wgUploadDirectory;
 
 		$noTOC = false;
 
@@ -59,7 +59,7 @@ class SpecialDocExport extends SpecialExport
 					$titles[] = PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' . $row->page_title;
 				}
 				
-				$filename = urlencode( $wgSitename . '-all-' . wfTimestampNow() . '.xml' ) ;
+				$filename = urlencode( $wgSitename . '-all-products-all-languages-' . wfTimestampNow() ) ;
 			}
 			else {
 				$titles[] = $_POST['toc'];
@@ -78,23 +78,62 @@ class SpecialDocExport extends SpecialExport
 						$titles[] = $tocItem['title'];
 				}
 
-				$filename = urlencode( $wgSitename . '-' . $productName . '-' . $versionName . '-' . $manualName . '-' . $language . '-' . wfTimestampNow() . '.xml' );
+				$filename = urlencode( $wgSitename . '-' . $productName . '-' . $versionName . '-' . $manualName . '-' . $language . '-' . wfTimestampNow() );
 			}
 
-			$page_text = implode("\n", $titles);
-			$history = WikiExporter::FULL;
-			$list_authors = true;
+			if ($_POST['method'] == 'xml') {
+				$filename = $filename . '.xml';
+				
+				$page_text = implode("\n", $titles);
+				$history = WikiExporter::FULL;
+				$list_authors = true;
 
-			$wgOut->disable();
-			// Cancel output buffering and gzipping if set
-			// This should provide safer streaming for pages with history
-			wfResetOutputBuffers();
-			header( "Content-type: application/xml; charset=utf-8" );
-			// Provide a sane filename suggestion
-			$wgRequest->response()->header( "Content-disposition: attachment;filename={$filename}" );
+				$wgOut->disable();
+				// Cancel output buffering and gzipping if set
+				// This should provide safer streaming for pages with history
+				wfResetOutputBuffers();
+				header( "Content-type: application/xml; charset=utf-8" );
+				// Provide a sane filename suggestion
+				$wgRequest->response()->header( "Content-disposition: attachment;filename={$filename}" );
 
-			$this->doExport( $page_text, $history, $list_authors );
-			return;
+				$this->doExport( $page_text, $history, $list_authors );
+				return;
+			} else if ($_POST['method'] == 'zip') {
+				$filename = $filename . '.zip';
+				$tempdir = $wgUploadDirectory . '/' . md5($filename . wfTimestampNow());
+
+				mkdir($tempdir);
+
+				foreach ($titles as $title) {
+					$article = new Article( Title::newFromText( $title ) );
+
+					$title_filename = str_replace(':', '_', $title) . ".txt";
+					$f = fopen("{$tempdir}/{$title_filename}", 'w');
+					fwrite($f, $article->getContent());
+					fclose($f);
+
+					$files[] = "{$tempdir}/{$title_filename}";
+				}
+
+				$this->create_zip($files, "{$wgUploadDirectory}/{$filename}");
+
+				$filesize = filesize("{$wgUploadDirectory}/{$filename}");
+
+				// Cleanup
+				foreach($files as $file) {
+					unlink($file);
+				}
+				rmdir($tempdir);
+
+				$wgOut->disable();
+				wfResetOutputBuffers();
+				header("Content-Type: application/octet-stream;");
+				header("Content-Transfer-Encoding: binary;");
+				header("Content-Disposition: attachment; filename={$filename};");
+				header("Content-Length: {$filesize};");
+				readfile("{$wgUploadDirectory}/{$filename}");
+				return;
+			}
 		}
 		else if ($wgRequest->wasPosted() && $_POST['toc'] === 0) {
 			// error
@@ -151,21 +190,85 @@ class SpecialDocExport extends SpecialExport
 		$toc_output = implode("\n", $toc_items);
 
 		$select =<<<EOL
-		<form action="index.php?title=Special:DocExport" method="post">
-		<label for="toc">
-			Table of Contents: 
-			<select name="toc" id="selectTOC" class="input input-xxlarge">
-				<option value="0">Select a Table of Contents ...</option>
-				<option value="all">Export all Documentation</option>
-				{$toc_output}
-			</select>
-		</label>
-			<input type="submit" id="selectGo" class="btn btn-primary" value="Export Manual" />
+		<h3>Export Options</h3>
+		<ul>
+			<li><strong>XML (Native, Download)</strong>: This will export all the titles that fall under the selection you make in properly formatted XML file that can be used by any MediaWiki Import function</li>
+			<li><strong>ZIP (Topic, TOC per File)</strong>: This will export one topic and one TOC per file in a zip file, this is useful when you need to send files to a translator for another language, they can return them in the same format.</li>
+		</ul>
+		<h3>Perform Export</h3>
+		<form action="index.php?title=Special:DocExport" method="post" class="form-horizontal">
+			<div class="control-group">
+				<label for="toc" class="control-label">What to Export:</label>
+				<div class="controls">
+					<select name="toc" id="selectTOC" class="input input-xxlarge">
+						<option value="0">Select Something to Export ...</option>
+						<option value="all">All Documentation</option>
+						<optgroup label="By Table of Contents">
+							{$toc_output}
+						</optgroup>
+					</select>
+				</div>
+			</div>
+			<div class="control-group">
+				<label for="method" class="control-label">Export Method:</label>
+				<div class="controls">
+					<select name="method" id="method" class="input">
+						<option value="xml">XML (Download)</option>
+						<option value="zip">ZIP (Page per File)</option>
+					</select>
+				</div>
+			</div>
+			<div class="control-group">
+				<div class="controls">
+					<input type="submit" id="selectGo" class="btn btn-primary" value="Export Documentation" />
+				</div>
+			</div>
 		</form>
 EOL;
 		$wgOut->addHTML( $select );
 		$wgOut->addHTML( $html );
 	}
 	
+	
+	public function create_zip($files = array(), $destination = '', $overwrite = false) {
+		//if the zip file already exists and overwrite is false, return false
+		if(file_exists($destination) && !$overwrite) { return false; }
+		//vars
+		$valid_files = array();
+		//if files were passed in...
+		if(is_array($files)) {
+			//cycle through each file
+			foreach($files as $file) {
+				//make sure the file exists
+				if(file_exists($file)) {
+					$valid_files[] = $file;
+				}
+			}
+		}
+		//if we have good files...
+		if(count($valid_files)) {
+			//create the archive
+			$zip = new ZipArchive();
+			if($zip->open($destination,$overwrite ? ZIPARCHIVE::OVERWRITE : ZIPARCHIVE::CREATE) !== true) {
+				return false;
+			}
+			//add the files
+			foreach($valid_files as $file) {
+				$zip->addFile($file, basename($file));
+			}
+			//debug
+			//echo 'The zip archive contains ',$zip->numFiles,' files with a status of ',$zip->status;
+
+			//close the zip -- done!
+			$zip->close();
+
+			//check to make sure the file exists
+			return file_exists($destination);
+		}
+		else
+		{
+			return false;
+		}
+	}
 	
 } // end class SpecialImportExport
