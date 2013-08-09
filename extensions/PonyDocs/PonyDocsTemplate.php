@@ -172,13 +172,19 @@ class PonyDocsTemplate extends QuickTemplate {
 		// Suppress warnings to prevent notices about missing indexes in $this->data
 		wfSuppressWarnings();
 
-		$template_file = "{$this->globals->IP}/skins/{$this->data['skin']->skinname}/templates/{$this->template['tpl']}";
+		$template_files[] = "{$this->globals->IP}/skins/{$this->data['skin']->skinname}/templates/{$this->template['tpl']}";
+		$template_files[] = "{$this->globals->IP}/skins/{$this->parentSkinname}/templates/{$this->template['tpl']}";
 
-		if (!is_file($template_file)) {
-			throw new FileNotFoundException("File not found: {$this->template['tpl']}");
+		$found = false;
+		for ($x=0; $x<count($template_files); $x++) {
+			if (is_file($template_files[$x]) && is_readable($template_files[$x])) {
+				$found = true;
+				$template_file = $template_files[$x];
+			}
 		}
-		else if (!is_readable($template_file)) {
-			throw new IOException("Could not access file: {$this->template['tpl']}");
+
+		if ($found == false) {
+			throw new Exception("Unable to find template file: {$template_files[$x]}");
 		}
 
 		ob_start();
