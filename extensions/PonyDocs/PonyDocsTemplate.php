@@ -32,6 +32,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 	var $_pageTitle = 'WikiDocs';
 
+	var $skin_names = array();
 
 	/**
 	 * This lets you map full titles or namespaces to specific PHP template files and prep methods.  The special '0' index
@@ -56,6 +57,18 @@ class PonyDocsTemplate extends QuickTemplate {
 			// Matches /Documentation/PRODUCT/VERSION page
 			"/^T:(([a-zA-Z]{2})\/)?".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."\/([".PONYDOCS_PRODUCT_LEGALCHARS."]+)(\/([".PONYDOCS_PRODUCTVERSION_LEGALCHARS."]+))?$/" => array('init' => 'prepareDocumentation', 'tpl' => 'product.tpl.php')
 		);
+
+		// Add Skins in reverse order of calling
+		// array_unshift($this->skin_names, str_replace('Template', '', get_class()));
+		$aClasses = get_declared_classes();
+		$aChildrenOf = array();
+		$rcParentClass = new ReflectionClass('PonyDocsTemplate');
+		foreach ($aClasses AS $class) {
+			$rcCurClass = new ReflectionClass($class);
+			if ($rcCurClass->isSubclassOf($rcParentClass)) {
+				array_unshift($this->skin_names, str_replace('Template', '', $rcCurClass->name));
+			}
+		}
 	}
 
 
@@ -172,8 +185,9 @@ class PonyDocsTemplate extends QuickTemplate {
 		// Suppress warnings to prevent notices about missing indexes in $this->data
 		wfSuppressWarnings();
 
-		$template_files[] = "{$this->globals->IP}/skins/{$this->data['skin']->skinname}/templates/{$this->template['tpl']}";
-		$template_files[] = "{$this->globals->IP}/skins/{$this->parentSkinname}/templates/{$this->template['tpl']}";
+		foreach ($this->skin_names as $skin_name) {
+			$template_files[] = "{$this->globals->IP}/skins/{$skin_name}/templates/{$this->template['tpl']}";
+		}
 
 		$found = false;
 		for ($x=0; $x<count($template_files); $x++) {

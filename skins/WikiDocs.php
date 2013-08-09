@@ -92,6 +92,11 @@ EOL;
  */
 class WikiDocsTemplate extends PonyDocsTemplate {
 
+	function __construct() {
+		parent::__construct();
+		array_unshift($this->skin_names, str_replace('Template', '', get_class()));
+	}
+
 	public function htmlAdminMenu() {
 		if ($this->globals->wgUser->isLoggedIn() && $this->isAdmin()) {
 			$dropdown = $this->generateDropdownHTML($this->adminMenu);
