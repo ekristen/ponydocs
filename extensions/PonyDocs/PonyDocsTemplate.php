@@ -202,8 +202,6 @@ class PonyDocsTemplate extends QuickTemplate {
 		/**
 		 * Adjust content actions as needed, such as add 'view all' link.
 		 */
-		$this->contentActions( );
-		$this->navURLS( );
 
 		if ( !strcmp( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $this->data['selectedProduct'], $wgTitle->__toString()) ||
 			 !strcmp( PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $this->data['selectedProduct'] . '/' . $this->data['selectedVersion'], $wgTitle->__toString()) ||
@@ -270,6 +268,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			}
 			else if (isset($pieces[2]) && preg_match( '/(.*)TOC(.*)/', $pieces[2], $matches ))
 			{
+				$this->data['selectedManual'] = $matches[1];
 				$this->data['titletext'] = $matches[1] . ' Table of Contents Page';
 				$this->data['headertext'] = $this->data['titletext'];
 
@@ -282,6 +281,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			else if ( count( $pieces ) >= 4 && PonyDocsProductManual::IsManual( $pieces[1], $pieces[2] ))
 			{
 				$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2] );
+				$this->data['selectedManual'] = $pieces[2];
 				if( $pManual )
 					$this->data['manualname'] = $pManual->getLongName( );
 				else
@@ -314,6 +314,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		{
 			$product = PonyDocsProduct::GetProductByShortName(PonyDocsProduct::GetSelectedProduct());
 			$pManual = PonyDocsProductManual::GetManualByShortName( $pieces[1], $pieces[2], $pieces[5] );
+			$this->data['selectedManual'] = $pieces[2];
 			if( $pManual )
 				$this->data['manualname'] = $pManual->getLongName( );
 			else
@@ -419,6 +420,8 @@ class PonyDocsTemplate extends QuickTemplate {
 			$this->data['pagetitle'] = $temp;
 		}
 
+		$this->contentActions( );
+		$this->navURLS( );
 	}
 
 
@@ -434,6 +437,28 @@ class PonyDocsTemplate extends QuickTemplate {
 
 		if( in_array( 'bureaucrat', $groups ) || in_array( $authProductGroup, $groups ))
 		{
+			if (isset($this->data['selectedManual'])) {
+				$p = PonyDocsProduct::GetProductByShortName( $this->data['selectedProduct'] );
+				$m = PonyDocsProductManual::GetManualByShortName($this->data['selectedProduct'], $this->data['selectedManual'], $this->data['selectedLanguage']);
+				$v = PonyDocsProductVersion::GetVersionByName( $this->data['selectedProduct'], $this->data['selectedVersion'] );
+				$toc = new PonyDocsTOC( $m, $v, $p, $this->data['selectedLanguage'] );
+			
+				$this->data['nav_urls']['toc_mgmt'] = array(
+					'href' => str_replace( '$1', $toc->getTOCPageTitle(), $wgArticlePath ),
+					'text' => 'Manage Table of Contents'
+				);
+			}
+
+			$this->data['nav_urls']['manuals_mgmt'] = array(
+				'href' => str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTMANUAL_SUFFIX . ':' . $this->data['selectedLanguage'], $wgArticlePath),
+				'text' => 'Manage Product Manuals'
+			);
+
+			$this->data['nav_urls']['versions_mgmt'] = array(
+				'href' => str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath),
+				'text' => 'Manage Product Versions'
+			);
+
 			$this->data['nav_urls']['special_doctopics'] = array(
 				'href' => str_replace( '$1', 'Special:DocTopics', $wgArticlePath ),
 				'text' => 'Document Topics' );
@@ -448,7 +473,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 			$this->data['nav_urls']['document_links'] = array(
 				'href' => str_replace( '$1', 'Special:SpecialDocumentLinks?t=' . $wgTitle->getNsText() . ':' . htmlspecialchars($wgTitle->getPartialURL()), $wgArticlePath),
-				'text' => 'Document Links');
+				'text' => 'What Links Here?');
 
 		}
 	}

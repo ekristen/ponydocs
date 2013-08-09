@@ -586,7 +586,32 @@ EOL;
 		return $output;
 	} // end function htmlProducts
 
-	function htmlToolbox() {
+
+	function htmlDocumentationQuickToolbox() {
+		foreach ( array('toc_mgmt', 'manuals_mgmt', 'versions_mgmt') as $url ) {
+			if ($url == 'document_links') $icon = 'icon-link';
+			if ($url == 'special_tocmgmt') $icon = 'icon-list-alt';
+
+			if (isset($this->data['nav_urls'][$url])) {
+				$docs_toolbox_items[] = '<li><a href="'. $this->data['nav_urls'][$url]['href'] . '"><i class="'.$icon.'"></i>'. $this->data['nav_urls'][$url]['text'] . '</a></li>';	
+			}
+		}
+
+		$output_docs_toolbox = implode("\n", $docs_toolbox_items);
+
+		$output =<<<EOL
+			<div class="well well-small">
+				<ul class="nav nav-list">
+					<li class="nav-header">Docs Quick Toolbox</li>
+					{$output_docs_toolbox}
+				</ul>
+			</div>
+EOL;
+		return $output;
+	}
+
+
+	function htmlDocumentationToolbox() {
 		foreach ( array('special_tocmgmt', 'document_links') as $url ) {
 			if ($url == 'document_links') $icon = 'icon-link';
 			if ($url == 'special_tocmgmt') $icon = 'icon-list-alt';
@@ -598,6 +623,19 @@ EOL;
 
 		$output_docs_toolbox = implode("\n", $docs_toolbox_items);
 
+		$output =<<<EOL
+			<div class="well well-small">
+				<ul class="nav nav-list">
+					<li class="nav-header">Documentation Toolbox</li>
+					{$output_docs_toolbox}
+				</ul>
+			</div>
+EOL;
+		return $output;
+	}
+
+
+	function htmlToolbox() {
 		if ($this->data['notspecialpage']) { 
 			if ($this->data['nav_urls']['recentchangeslinked'] ) {
 				$toolbox_items[] = '<li><a href="'.$this->data['nav_urls']['recentchangeslinked']['href'].'"><i class="icon-archive"></i> '.$this->translator->translate('recentchangeslinked-toolbox').'</a></li>';

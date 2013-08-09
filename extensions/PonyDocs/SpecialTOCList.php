@@ -76,7 +76,7 @@ class SpecialTOCList extends SpecialPage
 
 				while( $subrow = $dbr->fetchObject( $subres ))
 				{
-					if (preg_match( '/^V:' . $product . ':(.*)/i', $subrow->cl_to, $vmatch) && in_array($vmatch[1], $allowed_versions)) $versions[] = $vmatch[1];
+					if (preg_match( '/^V:' . $product . ':(.*):(.*)/i', $subrow->cl_to, $vmatch) && in_array($vmatch[1], $allowed_versions)) $versions[] = $vmatch[1];
 				}
 
 				if (sizeof($versions)) $wgOut->addHTML( '<a href="' . str_replace( '$1', $row->cl_sortkey, $wgArticlePath ) . '">' . $row->cl_sortkey . '</a> - Versions: ' . implode( ' | ', $versions ) . '<br />' );
@@ -85,7 +85,7 @@ class SpecialTOCList extends SpecialPage
 
 		$html = '<h2>Other Useful Management Pages</h2>' .
 				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $product . PONYDOCS_PRODUCTVERSION_SUFFIX, $wgArticlePath ) . '">Version Management</a> - Define and update available ' . $product . ' versions.<br />' .
-				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $product . PONYDOCS_PRODUCTMANUAL_SUFFIX, $wgArticlePath ) . '">Manuals Management</a> - Define the list of available manuals for the Documentation namespace.<br/><br/>';
+				'<a href="' . str_replace( '$1', PONYDOCS_DOCUMENTATION_PREFIX . $product . PONYDOCS_PRODUCTMANUAL_SUFFIX . ':' . PONYDOCS_LANGUAGE_DEFAULT, $wgArticlePath ) . '">Manuals Management</a> - Define the list of available manuals for the Documentation namespace.<br/><br/>';
 
 		$wgOut->addHTML( $html );
 	}

@@ -108,6 +108,8 @@
 		</div> <!-- end div.span9.pull-right -->
 
 		<div class="span3 pull-left">
+			<?php print $this->htmlDocumentationQuickToolbox(); ?>
+			<?php print $this->htmlDocumentationToolbox(); ?>
 			<?php print $this->generateManualTocHtml(); ?>
 			<?php print $this->htmlToolbox(); ?>
 		</div> <!-- end div.span3.pull-left -->
