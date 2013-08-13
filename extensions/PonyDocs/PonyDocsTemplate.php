@@ -258,7 +258,7 @@ class PonyDocsTemplate extends QuickTemplate {
 		 */
 		if( sizeof( $pieces ) < 5 )
 		{
-			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX . ":$wgPonyDocsLanguage" , $wgTitle->__toString( )))
+			if( !strcmp( PONYDOCS_DOCUMENTATION_PREFIX . $this->data['selectedProduct'] . PONYDOCS_PRODUCTVERSION_SUFFIX , $wgTitle->__toString( )))
 			{
 				$this->data['titletext'] = 'Versions Management - '.$this->data['selectedProduct'];
 				$this->data['headertext'] = $this->data['titletext'];
