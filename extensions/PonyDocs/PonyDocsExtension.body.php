@@ -1332,12 +1332,12 @@ HEREDOC;
 
 		if( !$wgTitle->exists( ))
 		{
-			$productName = PonyDocsProduct::GetSelectedProduct();
-			$versionName = PonyDocsProductVersion::GetSelectedVersion($productName);
+			$productName = PonyDocsProduct::GetProductByShortName($match[1], $match[4]);
+			$versionName = PonyDocsProductVersion::GetVersionByName($productName->getShortName(), $match[3]);
 			$language    = $match[4];
 
 			$script = 	"function ponydocsOnLoad() {
-							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName . ':' . $versionName . ':' . $language . "]]\");
+							$('#wpTextbox1').val(\"\\n\\n[[Category:V:" . $productName->getShortName() . ':' . $versionName->getVersionName() . ':' . $language . "]]\");
 						};";
 			$wgOut->addInLineScript( $script );
 		}
