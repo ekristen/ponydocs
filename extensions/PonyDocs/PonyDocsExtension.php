@@ -682,10 +682,12 @@ function efTopicParserFunction_Render( &$parser, $param1 = '' )
 		}
 	}
 	else {
-		$link_name = $param1;
+		$translated = PonyDocsTopic::FindH1ForTitle($topicName);
+		$link_name = $translated;
 	}
 
-	$output = '<a href="' . wfUrlencode(str_replace( '$1', $topicName, $wgArticlePath )) . '">' . $link_name . '</a>'; 
+	$output = '<a href="' . wfUrlencode(str_replace( '$1', $topicName, $wgArticlePath )) . '">' . $link_name . '</a>';
+
 	return $parser->insertStripItem($output, $parser->mStripState);
 }
 
