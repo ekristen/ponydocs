@@ -6,5 +6,8 @@ services:
   ${name}-db: mysql
   ${name}-fs: filesystem
 hooks:
+  post-staging:
+    - mkdir -p "$STACKATO_FILESYSTEM"/sessions
+    - echo "session.save_path = $STACKATO_FILESYSTEM/sessions" > "$STACKATO_APP_ROOT"/apache/php/sessions.ini
   pre-running:
     - sh stackato-setup.sh
