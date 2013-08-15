@@ -98,15 +98,15 @@ class PonyDocsExtension
 
 		if (preg_match('/^'.PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE.':([a-zA-Z]{2})$/', $title_match, $match)) {
 			$languageCode = strtolower($match[1]);
-			$language_in_url = true;
+			//$language_in_url = true;
 		}
 		else if (preg_match('/^'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.':(.*)'.PONYDOCS_PRODUCTMANUAL_SUFFIX.':([a-zA-Z]{2})$/', $title_match, $match)) {
 			$languageCode = strtolower($match[2]);
-			$language_in_url = true;
+			//$language_in_url = true;
 		}
 		else if (preg_match('/^'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.':(.*):(.*):(.*):(.*):([a-zA-Z]{2})$/' , $title_match, $match)) {
 			$languageCode = strtolower($match[5]);
-			$language_in_url = true;
+			//$language_in_url = true;
 		}
 		else if (preg_match('/^\/([a-zA-Z]{2})\/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'(\/)?(.*)?/i', $title_match, $match)) {
 			$languageCode = strtolower($match[1]);
