@@ -293,7 +293,9 @@ class PonyDocsTemplate extends QuickTemplate {
 				$this->data['headertext'] = $this->data['titletext'];
 
 				$wgOut->prependHTML( '</div>' );
-				$wgOut->prependHTML( '<br/><span class="' . $helpClass . '"><i>* Use {{#topic:Display Name}} within a bullet to create topics.</i></span>' );
+				$wgOut->prependHTML( '<br/><span class="' . $helpClass . '"><i>* The display name defaults to the ShortName upon creation.</i></span> ');
+				$wgOut->prependHTML( '<br/><span class="' . $helpClass . '"><i>* To change the display name of a topic, when editing change the contents that exists between the equal signs (= =)</i></span> ');
+				$wgOut->prependHTML( '<br/><span class="' . $helpClass . '"><i>* Use {{#topic:ShortName}} within a bullet to create topics.</i></span>' );
 				$wgOut->prependHTML( '<br/><span class="' . $helpClass . '"><i>* Topic bullets must be preceded by at least one section name in plain text.</i></span>' );
 				$wgOut->prependHTML( '<strong>Instructions</strong>' );
 				$wgOut->prependHTML( '<div class="alert alert-success">');
