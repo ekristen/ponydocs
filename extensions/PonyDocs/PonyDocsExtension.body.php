@@ -902,6 +902,8 @@ class PonyDocsExtension
 			return true;
 		}
 
+		PonyDocsExtension::replaceTopicLinks($article, $text);
+
 		// We're going to add a entry into the error_log to dictate who edited, 
 		// if they're an employee, and what topic they modified.
 		$groups = $user->getGroups();
@@ -2475,6 +2477,123 @@ HEREDOC;
 		);
 
 		return true;
+	}
+
+	static public function replaceTopicLinks(&$article, &$text) {
+		preg_match_all('/{{#topiclink:(.*)}}/', $text, $matches);
+
+		$title = $article->getTitle();
+
+		for ($x=0; $x<count($matches[1]); $x++) {
+			$wikilink = PonyDocsExtension::TopicToWikiLink($matches[1][$x], $title);
+
+			$text = str_replace($matches[0][$x], $wikilink, $text);
+		}
+	}
+
+	static public function TopicToWikiLink($topic, $title) {
+		global $wgArticlePath;
+
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $title->__toString(), $matches )) {
+			return false;
+		}
+
+		$manualShortName = $matches[2];
+		$productShortName = $matches[1];
+		$language = $matches[5];
+
+		PonyDocsWiki::getInstance($productShortName, $language);
+
+		/**
+		 * Get the earliest tagged version of this TOC page and append it to the wiki page?  Ensure the manual
+		 * is valid then use PonyDocsManual::getManualByShortName().  Next attempt to get the version tags for
+		 * this page -- which may be NONE -- and from this determine the "earliest" version to which this page
+		 * applies.
+		 */	
+		if( !PonyDocsProductManual::IsManual( $productShortName, $manualShortName, $language )) {
+			return false;
+		}
+
+		$pManual = PonyDocsProductManual::GetManualByShortName( $productShortName, $manualShortName, $language );
+
+		$pTopic = new PonyDocsTopic( new Article( $title ));
+
+		/**
+		 * @FIXME:  If TOC page is NOT tagged with any versions we cannot create the pages/links to the 
+		 * topics, right?
+		 */
+		$manVersionList = $pTopic->getProductVersions( );
+
+		if( !sizeof( $manVersionList ))
+		{
+			return $parser->insertStripItem($param1, $parser->mStripState);
+		}
+		$earliestVersion = PonyDocsProductVersion::findEarliest( $productShortName, $manVersionList );
+
+		/**
+		 * Clean up the full text name into a wiki-form.  This means remove spaces, #, ?, and a few other
+		 * characters which are not valid or wanted.  It's not important HOW this is done as long as it is
+		 * consistent.
+		 */
+		//$wikiTopic = preg_replace( '/([ \'#?=\\/])/', '', $param1 );
+		$wikiTopic = $topic;
+		$wikiPath = PONYDOCS_DOCUMENTATION_PREFIX . $productShortName . ':' . $manualShortName . ':' . $wikiTopic;
+
+		$dbr = wfGetDB( DB_SLAVE );
+
+		/**
+		 * Now look in the database for any instance of this topic name PLUS :<version>.  We need to look in 
+		 * categorylinks for it to find a record with a cl_to (version tag) which is equal to the set of the
+		 * versions for this TOC page.  For instance, if the TOC page was for versions 1.0 and 1.1 and our
+		 * topic was 'How To Foo' we need to find any cl_sortkey which is 'HowToFoo:%' and has a cl_to equal
+		 * to 1.0 or 1.1.  There should only be 0 or 1, so we ignore anything beyond 1.  If found, we use THAT
+		 * cl_sortkey as the link;  if NOT found we create a new topic, the name being the compressed topic name
+		 * plus the earliest TOC version ($earliestVersion->getName( )).  We then need to ACTUALLY create it
+		 * in the database, tag it with all the versions the TOC mgmt page is tagged with, and set the H1 to
+		 * the text inside the parser function.
+		 * 
+		 * @fixme:  Can we test if $action=save here so we don't do this on every page view?  
+		 */
+
+		$versionIn = array( );
+		foreach( $manVersionList as $pV )
+			$versionIn[] = $productShortName . ':' . $pV->getVersionName( ) . ':'. $language;
+
+		$res = $dbr->select( 'categorylinks', 'cl_sortkey',
+			array( 	"LOWER(cl_sortkey) LIKE 'Documentation:" . $dbr->strencode( $productShortName . ':' . $manualShortName . ':' . $wikiTopic ) . ":%:".strtolower($language)."'",
+					"cl_to IN ('V:" . implode( "','V:", $versionIn ) . "')" ), __METHOD__ );
+
+		$topicName = '';
+		if( !$res->numRows( ))
+		{
+			/**
+			 * No match -- so this is a "new" topic.  Set name.
+			 */
+			$topicName = PONYDOCS_DOCUMENTATION_PREFIX . $productShortName . ':' . $manualShortName . ':' . $wikiTopic . ':' . $earliestVersion->getVersionName( ) . ':' . $language;
+		}
+		else
+		{
+			$row = $dbr->fetchObject( $res );
+			$topicName = $row->cl_sortkey;
+		}
+
+		if ($language != PONYDOCS_LANGUAGE_DEFAULT) {
+			$translated = PonyDocsTopic::FindH1ForTitle($topicName);
+			if (!isset($translated) || empty($translated)) {
+				$link_name = "{$param1} (Not Translated Yet)";
+			}
+			else {
+				$link_name = "{$translated} (Original: {$param1})";
+			}
+		}
+		else {
+			$translated = PonyDocsTopic::FindH1ForTitle($topicName);
+			$link_name = $translated;
+		}
+
+		$link_name = trim($link_name);
+
+		return "[[{$topicName}|{$link_name}]]";
 	}
 }
 
