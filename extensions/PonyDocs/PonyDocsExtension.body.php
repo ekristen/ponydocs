@@ -2480,7 +2480,7 @@ HEREDOC;
 	}
 
 	static public function replaceTopicLinks(&$article, &$text) {
-		preg_match_all('/\[\[#topic:(.*)\]\]/', $text, $matches);
+		preg_match_all('/\[\[topic:(.*)\]\]/', $text, $matches);
 
 		$title = $article->getTitle();
 
