@@ -1,11 +1,17 @@
 #!/bin/bash
-#echo "This scripts does Stackato setup related to filesystem."
 
 if [ -d "$STACKATO_FILESYSTEM/images" ]; then
     echo "Filesystem is already configured"
 
     echo "Symlinking LocalSettings.php to proper location ..."
     cp $STACKATO_FILESYSTEM/LocalSettings.php LocalSettings.php
+
+    rm -r -f images
+    rm -r -f cache
+    rm -r -f logs
+    ln -s $STACKATO_FILESYSTEM/images images
+    ln -s $STACKATO_FILESYSTEM/cache cache
+    ln -s $STACKATO_FILESYSTEM/logs logs
     
     echo "All Done!"
 else
