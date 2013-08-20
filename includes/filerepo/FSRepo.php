@@ -425,9 +425,16 @@ class FSRepo extends FileRepo {
 			$good = true;
 			wfSuppressWarnings();
 			if ( $flags & self::DELETE_SOURCE ) {
-				if ( !rename( $srcPath, $dstPath ) ) {
-					$status->error( 'filerenameerror', $srcPath, $dstPath );
-					$good = false;
+				if ( !is_uploaded_file( $srcPath ) ) {
+					if ( !rename( $srcPath, $dstPath ) ) {
+						$status->error( 'filerenameerror', $srcPath, $dstPath );
+						$good = false;
+					}
+				} else {
+					if ( !move_uploaded_file( $srcPath, $dstPath ) ) {
+						$status->error( 'filerenameerror', $srcPath, $dstPath );
+						$good = false;
+					}
 				}
 			} else {
 				if ( !copy( $srcPath, $dstPath ) ) {
