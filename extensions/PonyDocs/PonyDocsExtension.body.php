@@ -903,6 +903,7 @@ class PonyDocsExtension
 		}
 
 		PonyDocsExtension::replaceTopicLinks($article, $text);
+		PonyDocsExtension::updateTopicLinks($article, $text);
 
 		// We're going to add a entry into the error_log to dictate who edited, 
 		// if they're an employee, and what topic they modified.
@@ -2479,7 +2480,59 @@ HEREDOC;
 		return true;
 	}
 
+	/**
+	 * updateTopicLinks
+	 * 
+	 * Find's all MediaWiki Links to Topics in an article,
+	 * and keeps their display names matching the display name
+	 * in the topic's page.
+	 * 
+	 * Can be disabled via the PONYDOCS_UPDATE_TOPIC_LINKS constant.
+	 * 
+	 * @author Erik Kristensen
+	 */
+	static public function updateTopicLinks(&$article, &$text) {
+		if (PONYDOCS_UPDATE_TOPIC_LINKS === false) {
+			return false;
+		}
+
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $article->getTitle()->__toString(), $title_matches )) {
+			return false;
+		}
+
+		preg_match_all('/\[\[(.*)\]\]/', $text, $matches);
+
+		for ($x=0; $x<count($matches); $x++) {
+			list($topic, $display_name) = explode("|", $matches[1][$x], 2);
+			if (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $topic, $null)) {
+				// we are a topic!!!
+				$topic_display_name = trim(PonyDocsTopic::FindH1ForTitle($topic));
+
+				if (strtolower($topic_display_name) != strtolower($display_name)) {
+					$text = str_replace($matches[0][$x], "[[{$topic}|{$topic_display_name}]]", $text);
+				}
+			}
+		}
+	}
+
+
+	/**
+	 * replaceTopicLinks
+	 * 
+	 * Not part of the original PonyDocs extension
+	 * 
+	 * Provides a shortcut to creating WikiMedia links to topics in the same manual
+	 * Topic names can get very long, this provides an easy shortcut.
+	 * 
+	 * Example: [[topic:Topic]] will morph into [[Documentation:Product:Manual:Topic:Version:Language|Topic]] upon save.
+	 * 
+	 * @author Erik Kristensen
+	 */
 	static public function replaceTopicLinks(&$article, &$text) {
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $article->getTitle()->__toString(), $matches )) {
+			return false;
+		}
+
 		preg_match_all('/\[\[topic:(.*)\]\]/', $text, $matches);
 
 		$title = $article->getTitle();
@@ -2491,6 +2544,13 @@ HEREDOC;
 		}
 	}
 
+	/**
+	 * TopicToWikiLink
+	 * 
+	 * Creates the WikiLink for the Topic
+	 * 
+	 * @author Erik Kristensen
+	 */
 	static public function TopicToWikiLink($topic, $title) {
 		global $wgArticlePath;
 

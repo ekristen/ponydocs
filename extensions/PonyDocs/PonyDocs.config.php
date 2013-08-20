@@ -45,6 +45,8 @@ pdefine('PONYDOCS_LANGUAGE_DEFAULT', 'en');
 pdefine('PONYDOCS_LANGUAGE_AUTOUI', false);
 // Always include language in URL, to include the default language.
 pdefine('PONYDOCS_LANGUAGE_ALWAYS', false);
+// Upon article save, any link that is a topic will have its display name updated automagically.
+pdefine('PONYDOCS_UPDATE_TOPIC_LINKS', true);
 
 pdefine('PONYDOCS_CACHE_ENABLED', true);
 pdefine('PONYDOCS_CACHE_DEBUG', false);
