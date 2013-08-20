@@ -74,25 +74,16 @@ if( isset( $_SERVER['SERVER_NAME'] ) ) {
 # check if server use https:
 $wgProto = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on') ? 'https' : 'http';
 
-$server_port = $_SERVER['SERVER_PORT'];
-
-if ( isset( $_SERVER['HTTP_X_FORWARDED_FOR'] ) && isset( $_SERVER['HTTP_X_FORWARDED_PORT'] ) && isset( $_SERVER['HTTP_X_FORWARDED_PROTO'] ) ) {
-	$xproto_parts = explode(',', $_SERVER['HTTP_X_FORWARDED_PROTO']);
-	$wgProto = $xproto_parts[0];
-	$xport_parts = explode(',', $_SERVER['HTTP_X_FORWARDED_PORT']);
-	$server_port = $xport_parts[0];
-}
-
-
 $wgServer = $wgProto.'://' . $wgServerName;
 # If the port is a non-standard one, add it to the URL
-if(    isset( $server_port )
-	&& !strpos( $wgServerName, ':' )
-    && (    ( $wgProto == 'http' && $server_port != 80 )
-	 || ( $wgProto == 'https' && $server_port != 443 ) ) ) {
+if( !getenv('STACKATO_APP_NAME') && isset( $_SERVER['SERVER_PORT'] )
+        && !strpos( $wgServerName, ':' )
+    && (    ( $wgProto == 'http' && $_SERVER['SERVER_PORT'] != 80 )
+         || ( $wgProto == 'https' && $_SERVER['SERVER_PORT'] != 443 ) ) ) {
 
-	$wgServer .= ":" . $server_port;
+        $wgServer .= ":" . $_SERVER['SERVER_PORT'];
 }
+
 
 /**
  * The path we should point to.
