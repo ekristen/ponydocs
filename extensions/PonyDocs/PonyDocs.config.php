@@ -48,7 +48,13 @@ pdefine('PONYDOCS_LANGUAGE_ALWAYS', false);
 // Upon article save, any link that is a topic will have its display name updated automagically.
 pdefine('PONYDOCS_UPDATE_TOPIC_LINKS', true);
 
+// PonyDocs Cache Settings
 pdefine('PONYDOCS_CACHE_ENABLED', true);
+
+pdefine('CATEGORY_CACHE_TTL', 300);
+pdefine('PONYDOCS_TEMP_DIR', '/tmp/');
+
+// PonyDocs Debug Settings
 pdefine('PONYDOCS_CACHE_DEBUG', false);
 pdefine('PONYDOCS_REDIRECT_DEBUG', false);
 pdefine('PONYDOCS_SESSION_DEBUG', false);
@@ -57,8 +63,8 @@ pdefine('PONYDOCS_CASE_INSENSITIVE_DEBUG', false);
 pdefine('PONYDOCS_DOCLINKS_DEBUG', false);
 
 pdefine('PONYDOCS_DOCUMENTATION_PREFIX', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . ':' );
-
 pdefine('PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE', PONYDOCS_DOCUMENTATION_PREFIX . 'Products' );
+
 pdefine('PONYDOCS_PRODUCT_LEGALCHARS', 'A-Za-z0-9_,.-' );
 pdefine('PONYDOCS_PRODUCT_REGEX', '/([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)/' );
 pdefine('PONYDOCS_PRODUCT_STATIC_PREFIX', '.');
@@ -73,16 +79,10 @@ pdefine('PONYDOCS_PRODUCTMANUAL_LEGALCHARS', 'A-Za-z0-9_,.-' );
 pdefine('PONYDOCS_PRODUCTMANUAL_REGEX', '/([' . PONYDOCS_PRODUCTMANUAL_LEGALCHARS . ']+)/' );
 pdefine('PONYDOCS_PRODUCTMANUAL_TITLE_REGEX', '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([' . PONYDOCS_PRODUCT_LEGALCHARS . ']+)' . PONYDOCS_PRODUCTMANUAL_SUFFIX . ':([a-zA-Z]{2})/' );
 
-// category cache expiration in seconds
-pdefine('CATEGORY_CACHE_TTL', 300);
-pdefine('PONYDOCS_TEMP_DIR', '/tmp/');
-
 // Static Documentation
 pdefine('PONYDOCS_STATIC_DIR', '/var/www/useruploads/docs/staticDocs');
 pdefine('PONYDOCS_STATIC_PATH', 'DocumentationStatic');
 pdefine('PONYDOCS_STATIC_URI', '/' . PONYDOCS_STATIC_PATH . '/');
-
-// specify URI to CSS file to dynamically override static documentation iframe CSS
 pdefine('PONYDOCS_STATIC_CSS', '');
 
 // capitalization settings
