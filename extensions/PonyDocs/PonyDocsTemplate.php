@@ -653,20 +653,33 @@ class PonyDocsTemplate extends QuickTemplate {
 	 * @return array
 	 */
 	private function createNavigationMenu() {
+		global $wgUser;
+
 		$menu = array();
 
 		$menu['items'][] = array('divider' => true);
-		$menu['items'][] = array('label' => 'Home', 'class' => $_SERVER['REQUEST_URI'] == '/Documentation' ? 'active' : '', 'url' => '/Documentation');
 
 		foreach (PonyDocsProduct::getDefinedProducts() as $product) {
+			if (
+				in_array('sysop', $wgUser->mGroups) ||
+				in_array('docteam', $wgUser->mGroups) ||
+				in_array("{$product->getShortName()}-docteam", $wgUser->mGroups) ||
+				in_array("{$product->getShortName()}-preview", $wgUser->mGroups)
+			) {
+				$latest = PonyDocsProductVersion::GetLatestVersion($product->getShortName());
+			}
+			else {
+				$latest = PonyDocsProductVersion::GetLatestVersionForUser($product->getShortName());
+			}
+
 			//$latest = PonyDocsProductVersion::GetLatestVersionForUser($product->getShortName());
-			$latest = PonyDocsProductVersion::GetLatestReleasedVersion($product->getShortName());
+			//$latest = PonyDocsProductVersion::GetLatestReleasedVersion($product->getShortName());
 
 			if (!isset($latest) || empty($latest))
 				continue;
 
 			$class = '';
-			$href = str_replace("/", "\/", "/Documentation/".$product->getShortName());
+			$href = str_replace("/", "\/", "/".PONYDOCS_DOCUMENTATION_NAMESPACE_NAME."/".$product->getShortName());
 			if (preg_match("/^{$href}(.*)/", $_SERVER['REQUEST_URI'])) {
 				$class = 'active';
 			}
@@ -680,15 +693,15 @@ class PonyDocsTemplate extends QuickTemplate {
 					if (empty($toc_versions))
 						continue;
 					//$subitems[] = array('label' => $manual->getLongName(), 'url' => '/Documentation/' . $product->getShortName() . '/' . $latest->getVersionName() . '/' . $manual->getShortName());
-					$subitems[] = array('label' => $manual->getLongName(), 'url' => '/Documentation/' . $product->getShortName() . '/latest/' . $manual->getShortName());
+					$subitems[] = array('label' => $manual->getLongName(), 'url' => '/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'/' . $product->getShortName() . '/latest/' . $manual->getShortName());
 				}
 			}
 
 			if (!empty($subitems)) {
-				$menu['items'][] = array('label' => $product->getLongName(), 'class' => $class, 'url' => '/Documentation/' . $product->getShortName(), 'items' => $subitems);
+				$menu['items'][] = array('label' => $product->getLongName(), 'class' => $class, 'url' => '/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'/' . $product->getShortName(), 'items' => $subitems);
 			}
 			else {
-				$menu['items'][] = array('label' => $product->getLongName(), 'class' => $class, 'url' => '/Documentation/' . $product->getShortName());
+				$menu['items'][] = array('label' => $product->getLongName(), 'class' => $class, 'url' => '/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'/' . $product->getShortName());
 			}
 		}
 
