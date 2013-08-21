@@ -194,6 +194,7 @@ class PonyDocsTemplate extends QuickTemplate {
 			if (is_file($template_files[$x]) && is_readable($template_files[$x])) {
 				$found = true;
 				$template_file = $template_files[$x];
+				break;
 			}
 		}
 
