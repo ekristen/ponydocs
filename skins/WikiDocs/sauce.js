@@ -5,4 +5,6 @@ $( document ).ready(function() {
     $("#mw-editform-cancel").addClass("btn btn-danger");
     $("#wpLoginAttempt").addClass("btn btn-primary");
     $("#wpMailmypassword").addClass("btn btn-info");
+    $("input[type=submit]").addClass("btn btn-info");
+    $("input[type=search]").addClass("input-large");
 });

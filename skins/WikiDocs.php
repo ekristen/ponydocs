@@ -144,13 +144,48 @@ EOL;
 		$item_output = implode("\n", $items);
 
 		$output =<<<EOL
-		<ul class="breadcrumb">
-			{$item_output}
-		</ul>
+<div id="breadcrumbs" class="hidden-phone">
+	<ul class="breadcrumb">
+		{$item_output}
+	</ul>
+</div>
 EOL;
 
 		return $output;
 	}
+
+
+	public function searchForm() {
+		$input = Html::input( 'search',
+			isset( $this->data['search'] ) ? $this->data['search'] : '', 'search',
+			array(
+				'id' => 'searchInput',
+				'title' => $this->skin->titleAttrib( 'search' ),
+				'accesskey' => $this->skin->accesskey( 'search' )
+			) );
+		global $wgScript;
+		global $searchtitle;
+
+		foreach ($wgNamespacesToBeSearchedDefault as $ns => $num) {
+			$inputs .= '<input type="hidden" name="ns{$num}" value="1" />' . "\n";
+		}
+
+		$title = urlencode("Special:Search");
+
+		$output =<<<EOL
+			<form action="{$wgScript}" id="searchform" class="navbar-form pull-right">
+				<input type="hidden" name="title" value="{$title}"/>
+				{$inputs}
+				<div class="input-append">
+					{$input}
+					<input type="submit" name="fulltext" class="btn searchButton" id="mw-searchButton" value="Search" />
+				</div>
+			</form>
+EOL;
+
+		return $output;
+	}
+
 
 	public function userMenu() {
 		if (!$this->globals->wgUser->isLoggedIn()) {

@@ -82,3 +82,20 @@ a {
 #editpage-copywarn {
     display: none;
 }
+
+#searchform {
+    margin-right: 10px;
+}
+
+.navbar-form .input-append { margin-bottom: 0px;}
+.navbar-form .input-append input.btn { padding-top: 6px; padding-bottom: 5px; }
+
+
+#searchText {
+    margin-bottom: 0px;
+}
+
+ol > li > ol {
+    list-style-type: lower-alpha !important;
+}
+

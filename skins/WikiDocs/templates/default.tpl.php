@@ -55,6 +55,8 @@
 			<?php print $this->navigationMenu(); ?>
 
 			<?php print $this->userMenu(); ?>
+
+			<?php print $this->searchForm(); ?>
 		</div>
 	</div>
 </div>
