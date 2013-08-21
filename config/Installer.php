@@ -2091,6 +2091,13 @@ if ( \$wgCommandLineMode ) {
 # sure that cached pages are cleared.
 \$wgCacheEpoch = max( \$wgCacheEpoch, gmdate( 'YmdHis', @filemtime( __FILE__ ) ) );
 
+# Setup Blacklists
+\$wgBlacklistOps['useRegex'] = true;
+\$wgWhitelist['sysop']['read'] = $wgBlacklist['*']['read'] = array('^Special:(Export|ActiveUsers|ListUsers|IpBlocklist|Log|AllMessages)\$');
+
+# Include Other Extensions
+include_once(\$IP . \"/extensions/Blacklist.php\");
+
 # Include PonyDocs Extension
 include_once(\$IP . \"/extensions/PonyDocs/PonyDocs.LocalSettings.php\");
 
