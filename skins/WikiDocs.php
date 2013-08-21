@@ -681,11 +681,12 @@ EOL;
 			$toolbox_items[] = '<li id="t-trackbacklink"><a href="'.$this->data['nav_urls']['trackbacklink']['href'].'">'.$this->translator->translate('trackbacklink').'</a></li>';
 		}
 
-		foreach ( array('contributions', 'log', 'blockip', 'emailuser', 'upload', 'specialpages') as $special ) {
+		foreach ( array('contributions', 'log', 'blockip', 'emailuser', 'upload', 'specialpages', 'whatlinkshere') as $special ) {
 			if ($this->data['nav_urls'][$special]) {
 				$icon = '';
 				if ($special == 'upload') $icon = 'upload';
 				if ($special == 'specialpages' ) $icon = 'cog';
+				if ($special == 'whatlinkshere' ) $icon = 'link';
 
 				$toolbox_items[] = '<li><a href="'.$this->data['nav_urls'][$special]['href'].'"><i class="icon-'.$icon.'"></i> '.$this->translator->translate($special).'</a></li>';
 			}
