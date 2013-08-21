@@ -1406,8 +1406,6 @@ if( $conf->posted && ( 0 == count( $errs ) ) ) {
 			"<pre>\n" . htmlspecialchars( $localSettings ) . "</pre>\n" );
 		}
 
-		$localSettings .= "include_once(\$IP . \"/extensions/PonyDocs/PonyDocs.LocalSettings.php\");\n\n";
-		
 		if(fwrite( $f, $localSettings ) ) {
 			fclose( $f );
 			print "<hr/>\n";
@@ -2093,10 +2091,17 @@ if ( \$wgCommandLineMode ) {
 # sure that cached pages are cleared.
 \$wgCacheEpoch = max( \$wgCacheEpoch, gmdate( 'YmdHis', @filemtime( __FILE__ ) ) );
 
-# Enable uploads by default
-\$wgEnableUploads = true;
-
 # Include PonyDocs Extension
+include_once(\$IP . \"/extensions/PonyDocs/PonyDocs.LocalSettings.php\");
+
+# Setup default search namespaces
+\$wgNamespacesToBeSearchedDefault = array(PONYDOCS_DOCUMENTATION_NAMESPACE_ID => true);
+
+# Define PonyDocs Related Settings Here
+//define('PONYDOCS_PRODUCT_LOGO_URL', '/path/to/logo/file.png');
+//define('PONYDOCS_PDF_COPYRIGHT_MESSAGE', 'Copyright Your Company, Inc. All Rights Reserved');
+//define('PONYDOCS_PDF_TITLE_IMAGE_PATH', '/path/to/logo/file/for/pdf.png');
+//define('PONYDOCS_ENABLE_BRANCHINHERIT_EMAIL', true);
 
 "; ## End of setting the $localsettings string
 
