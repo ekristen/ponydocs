@@ -160,6 +160,7 @@ EOL;
 			isset( $this->data['search'] ) ? $this->data['search'] : '', 'search',
 			array(
 				'id' => 'searchInput',
+				'class' => 'span2',
 				'title' => $this->skin->titleAttrib( 'search' ),
 				'accesskey' => $this->skin->accesskey( 'search' )
 			) );
