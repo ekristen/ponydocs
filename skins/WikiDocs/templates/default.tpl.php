@@ -4,6 +4,7 @@
 	<meta http-equiv="Content-Type" content="<?php $this->text('mimetype') ?>; charset=<?php $this->text('charset') ?>" />
 	<?php $this->html('headlinks') ?>
 	<title><?php $this->text('pagetitle') ?></title>
+	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Montserrat" />
 	<link rel="stylesheet" type="text/css" href="<?php $this->text('stylepath') ?>/<?php $this->text('stylename') ?>/bootstrap/css/bootstrap.min.css?<?php echo $GLOBALS['wgStyleVersion'] ?>" />
 	<link rel="stylesheet" type="text/css" href="<?php $this->text('stylepath') ?>/<?php $this->text('stylename') ?>/bootstrap/css/bootstrap-responsive.min.css?<?php echo $GLOBALS['wgStyleVersion'] ?>" />
 	<link rel="stylesheet" type="text/css" href="<?php $this->text('stylepath') ?>/<?php $this->text('stylename') ?>/font-awesome/css/font-awesome.min.css?<?php echo $GLOBALS['wgStyleVersion'] ?>" />
