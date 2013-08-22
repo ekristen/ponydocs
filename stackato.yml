@@ -9,5 +9,9 @@ hooks:
   post-staging:
     - mkdir -p "$STACKATO_FILESYSTEM"/sessions
     - echo "session.save_path = $STACKATO_FILESYSTEM/sessions" > "$STACKATO_APP_ROOT"/apache/php/sessions.ini
+    - sudo pear install mail
+    - sudo pear install Net_SMTP
+    - sudo pear install Auth_SASL
+    - sudo pear install mail_mime
   pre-running:
     - sh stackato-setup.sh

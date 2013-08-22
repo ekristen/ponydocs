@@ -96,7 +96,7 @@ class WikiDocsTemplate extends PonyDocsTemplate {
 		if ($this->globals->wgUser->isLoggedIn() && $this->isAdmin()) {
 			$dropdown = $this->generateDropdownHTML($this->adminMenu);
 			$output =<<<EOL
-<div class="btn-group pull-left">
+<div class="btn-group pull-left visible-desktop">
 	<a class="btn btn-info dropdown-toggle" data-toggle="dropdown" href="#">
 		Admin <span class="caret"></span>
 	</a>
@@ -114,7 +114,7 @@ EOL;
 		$dropdown = $this->generateNavDropdownHTML($this->navigationMenu);
 
 		$output =<<<EOL
-<div class="nav-collapse collapse">
+<div class="navigation nav-collapse collapse">
 	{$dropdown}
 </div>
 EOL;
@@ -174,7 +174,8 @@ EOL;
 		$title = urlencode("Special:Search");
 
 		$output =<<<EOL
-			<form action="{$wgScript}" id="searchform" class="navbar-form pull-right">
+		<div class="pull-right visible-desktop">
+			<form action="{$wgScript}" id="searchform" class="navbar-form">
 				<input type="hidden" name="title" value="{$title}"/>
 				{$inputs}
 				<div class="input-append">
@@ -182,6 +183,7 @@ EOL;
 					<input type="submit" name="fulltext" class="btn searchButton" id="mw-searchButton" value="Search" />
 				</div>
 			</form>
+		</div>
 EOL;
 
 		return $output;
@@ -210,7 +212,7 @@ EOL;
 			$link_output = implode("\n", $links);
 
 			$output =<<<EOL
-			<div class="btn-group pull-right">
+			<div class="btn-group pull-right visible-desktop">
 				<a class="btn btn-primary" href="{$first['href']}">My Account</a>
 				<button class="btn btn-primary dropdown-toggle" data-toggle="dropdown" href="#"><span class="caret"></span></button>
 				<ul class="dropdown-menu">
