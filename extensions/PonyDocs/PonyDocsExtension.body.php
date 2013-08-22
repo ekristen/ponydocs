@@ -902,8 +902,8 @@ class PonyDocsExtension
 			return true;
 		}
 
-		PonyDocsExtension::replaceTopicLinks($article, $text);
 		PonyDocsExtension::updateTopicLinks($article, $text);
+		PonyDocsExtension::replaceTopicLinks($article, $text);
 
 		// We're going to add a entry into the error_log to dictate who edited, 
 		// if they're an employee, and what topic they modified.
@@ -2500,16 +2500,17 @@ HEREDOC;
 			return false;
 		}
 
-		preg_match_all('/\[\[(.*)\]\]/', $text, $matches);
+		if (preg_match_all('/\[\[([a-zA-Z0-9:|.-_]+)\]\]/', $text, $matches)) {
 
-		for ($x=0; $x<count($matches); $x++) {
-			list($topic, $display_name) = explode("|", $matches[1][$x], 2);
-			if (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $topic, $null)) {
-				// we are a topic!!!
-				$topic_display_name = trim(PonyDocsTopic::FindH1ForTitle($topic));
+			for ($x=0; $x<count($matches); $x++) {
+				list($topic, $display_name) = explode("|", $matches[1][$x], 2);
+				if (preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/i', $topic, $null)) {
+					// we are a topic!!!
+					$topic_display_name = trim(PonyDocsTopic::FindH1ForTitle($topic));
 
-				if (strtolower($topic_display_name) != strtolower($display_name)) {
-					$text = str_replace($matches[0][$x], "[[{$topic}|{$topic_display_name}]]", $text);
+					if (strtolower($topic_display_name) != strtolower($display_name)) {
+						$text = str_replace($matches[0][$x], "[[{$topic}|{$topic_display_name}]]", $text);
+					}
 				}
 			}
 		}
@@ -2533,14 +2534,14 @@ HEREDOC;
 			return false;
 		}
 
-		preg_match_all('/\[\[topic:(.*)\]\]/', $text, $matches);
+		if (preg_match_all('/\[\[topic:([a-zA-Z:-_]+)\]\]/', $text, $matches)) {
+			$title = $article->getTitle();
 
-		$title = $article->getTitle();
+			for ($x=0; $x<count($matches[1]); $x++) {
+				$wikilink = PonyDocsExtension::TopicToWikiLink($matches[1][$x], $title);
 
-		for ($x=0; $x<count($matches[1]); $x++) {
-			$wikilink = PonyDocsExtension::TopicToWikiLink($matches[1][$x], $title);
-
-			$text = str_replace($matches[0][$x], $wikilink, $text);
+				$text = str_replace($matches[0][$x], $wikilink, $text);
+			}
 		}
 	}
 
