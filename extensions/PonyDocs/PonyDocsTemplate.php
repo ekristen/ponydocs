@@ -212,7 +212,7 @@ class PonyDocsTemplate extends QuickTemplate {
 
 
 	public function prepareDocumentation() {
-		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser, $wgPonyDocsLanguage;
+		global $wgArticle, $wgParser, $wgTitle, $wgOut, $wgScriptPath, $wgUser, $wgPonyDocsLanguage, $wgSitename;
 
 		/**
 		 * We need a lot of stuff from our PonyDocs extension!
@@ -310,7 +310,6 @@ class PonyDocsTemplate extends QuickTemplate {
 				else
 					$this->data['manualname'] = $pieces[2]; 
 				$this->data['topicname'] = $pieces[3];
-				$this->data['titletext'] = '';
 				$this->data['headertext'] = $this->data['titletext'];
 			}
 			else
@@ -326,12 +325,15 @@ class PonyDocsTemplate extends QuickTemplate {
 
 					$product = PonyDocsProduct::GetProductByShortName($subprod, $wgPonyDocsLanguage);
 					$this->data['headertext'] = $product->getLongName() . ' <small>Manuals</small>';
+					$this->data['titletext'] = $product->getLongName() . " Manuals";
 				}
 				else {
 					$this->data['topicname'] = $pieces[0];
 					$this->data['headertext'] = $pieces[0];
+					$this->data['titletext'] = $pieces[0];
 				}
 			}
+
 		}
 		else
 		{
@@ -349,12 +351,15 @@ class PonyDocsTemplate extends QuickTemplate {
 				$this->data['titletext'] = $h1;
 
 			$this->data['headertext'] = "{$product->getLongName()} <small>{$this->data['manualname']}</small>";
+			$this->data['titletext'] = "{$product->getLongName()} - {$this->data['manualname']}";
 
 			global $action;
 			if ($action == 'edit') {
 				$wgOut->prependHTML('<p>NOTICE: Do not remove the Category Links!!!</p>');
 			}
 		}
+
+		$this->data['pagetitle'] = "{$this->data['titletext']} - {$wgSitename}";
 
 		/**
 		 * Get current topic, passing it our global Article object.  From this, generate our TOC based on the current
