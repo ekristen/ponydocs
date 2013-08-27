@@ -835,7 +835,7 @@ class PonyDocsExtension
 	{
 		$title = $article->getTitle( );
 
-		if( false && preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*):([a-zA-Z]{2})/i', $title->__toString( ), $match ))
+		if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*):([a-zA-Z]{2})/i', $title->__toString( ), $match ))
 		{
 			/**
 			 * Extract our version and manual objects.  From it build the cache key then REMOVE IT.  THEN, create our PonyDocsTOC
@@ -1296,11 +1296,11 @@ HEREDOC;
 											"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%:".$language."'",
 											"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . ':' . $language . "'" ), __METHOD__ );
 
+					$topicTitle = $sqlMatch . ':' . $version . ':' . $language;
+					$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
+
 					if( !$res->numRows( ))
 					{
-						$topicTitle = $sqlMatch . ':' . $version . ':' . $language;
-						$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
-
 						$tempArticle = new Article( Title::newFromText( $topicTitle ));
 						if( !$tempArticle->exists( ))
 						{
@@ -1744,7 +1744,7 @@ HEREDOC;
 
 					// If the link is to a section, remove section related characters.
 					$link_name = $match[1];
-					if (strpos($match[2], '#') == 0) {
+					if (strpos($match[2], '#') === 0) {
 						$link_name = str_replace("#", '', $match[2]);
 						$link_name = str_replace("_", ' ', $link_name);
 						$match[1] = $pieces[3];
@@ -2706,6 +2706,190 @@ HEREDOC;
 
 		return "[[{$topicName}|{$link_name}]]";
 	}
+
+
+	/**
+	 * updatePageLinks
+	 * 
+	 * This is function that is called from onLinksUpdateComplete
+	 * 
+	 * This inserts an entry into the pagelinks table for PonyDocs related
+	 * shortcut links. It is only called from the onLinksUpdateComplete.
+	 */
+	static public function updatePageLinks(&$title, $topicTitle) {
+		$dbr = wfGetDB( DB_SLAVE );
+		
+		$found_article = new Article( Title::newFromText($topicTitle) );
+
+		$query = "INSERT INTO pagelinks (pl_from, pl_namespace, pl_title) VALUES ('{$title->getArticleID()}', '{$found_article->getTitle()->getNamespace()}', '{$found_article->getTitle()->getText()}') ON DUPLICATE KEY UPDATE pl_title = '{$found_article->getTitle()->getText()}'";
+		try {
+			$dbr->query($query);
+		} catch (Exception $ex){
+			error_log("FATAL [PonyDocsExtension::updatePageLinks] DB call failed on Line ".$ex->getLine()." on file ".$ex->getFile().", error Message is: \n".$ex->getMessage()."Stack Trace is:".$ex->getTraceAsString());
+		}
+	}
+
+
+	/**
+	 * onLinksUpdateComplete
+	 * 
+	 * This is a MediaWiki hook that is called after MediaWiki has parsed for all links that may be in the text.
+	 * 
+	 * This hook searches for PonyDocs related shortcut links and updates the pagelinks table.
+	 * This allows for What Links Here feature to work properly.
+	 * 
+	 */
+	static public function onLinksUpdateComplete( &$linksUpdate ) {
+		$title = $linksUpdate->getTitle();
+		$article = new Article( $title );
+		$text = $article->getContent();
+
+		// Dangerous.  Only set the flag if you know that you should be skipping 
+		// this processing.  Currently used for branch/inherit.
+		if(PonyDocsExtension::isSpeedProcessingEnabled()) {
+			return true;
+		}
+
+		if( !preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '/', $title->__toString( ))) return true;
+
+		$dbr = wfGetDB( DB_SLAVE );
+
+		if( preg_match_all( "/\[\[([" . Title::legalChars( ) . "]*)([|]?([^\]]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
+		//if( preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:._?#!@$+= -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
+		{
+			/**
+			 * $match[1] = Wiki Link
+			 * $match[3] = Alternate Text
+			 */
+			foreach( $matches as $match )
+			{
+				/**
+				 * Forms which can exist are as such:
+				 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
+				 * [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
+				 * [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
+				 * [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
+				 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
+				 * So we first need to detect the use of a namespace.
+				 */
+				if( strpos( $match[1], ':' ) !== false )
+				{
+					$pieces = explode( ':', $match[1] );
+
+					if( !strcasecmp( $pieces[0], PONYDOCS_DOCUMENTATION_NAMESPACE_NAME))
+					{
+						/**
+						 * Handle [[Documentation:Manual:Topic]] referencing selected version -AND-
+						 * [[Documentation:User:HowToFoo]] as an explicit link to a page.
+						 * [[Documentation:Product:Manual:Topic|Some Alternate Text]]
+						 */
+						if( sizeof( $pieces ) == 3 || sizeof( $pieces ) == 4 )
+						{
+							if ( sizeof($pieces) == 3) {
+								$product = PonyDocsProduct::GetSelectedProduct();
+								$manual = $pieces[1];
+								$topic = $pieces[2];
+							} else {
+								$product = $pieces[1];
+								$manual = $pieces[2];
+								$topic = $pieces[3];
+							}
+
+							// if link is to current product, get currect selected version, otherwise we have to guess
+							// and get the latest released version of the linked product
+							if ($product == PonyDocsProduct::GetSelectedProduct())
+							{
+								$version = PonyDocsProductVersion::GetSelectedVersion( $product );
+							} else {
+								if (PonyDocsProduct::IsProduct($product))
+								{
+									// Need to load the product versions if this topic is for a different product
+									PonyDocsProductVersion::LoadVersionsForProduct($product);
+									
+									$pVersion = PonyDocsProductVersion::GetLatestReleasedVersion($product);
+									
+									// If there is no available latest released version go to the next match
+									if (!$pVersion) continue;
+									
+									$version  = $pVersion->getVersionName();
+								}
+							}
+
+							$language = $product->getLanguage();
+
+							/**
+							 * Does this topic exist?  Look for a topic with this name tagged for the current version and current product.
+							 * If nothing is found, we create a new article.
+							 */
+							$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $manual . ':' . $topic;
+							$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
+													"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%:".$language."'",
+													"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . ':' . $language . "'" ), __METHOD__ );
+
+							$topicTitle = $sqlMatch . ':' . $version . ':' . $language;
+							$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
+
+							PonyDocsExtension::updatePageLinks($title, $topicTitle);
+						}
+
+						/**
+						 * Explicit link of the form:
+						 * [[Documentation:Product:Manual:Topic:Version|Some Alternate Text]]
+						 */
+						else if( sizeof( $pieces ) == 5 )
+						{
+							$product = $pieces[1];
+							$version = PonyDocsProductVersion::GetSelectedVersion( $product );
+							$version = $pieces[4];
+							$language = PONDOCS_LANGUAGE_DEFAULT;
+
+							$topicTitle = $match[1] . ':' . $language;
+							$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
+
+							PonyDocsExtension::updatePageLinks($title, $topicTitle);
+						}
+					}
+
+				}
+				/**
+				 * Here we handle simple topic links:
+				 * [[SomeTopic|Some Display Title]]
+				 * Which assumes CURRENT manual in Documentation namespace.  It finds the topic which must share a version tag
+				 * with the currently displayed title.
+				 */
+				else
+				{
+					$product = PonyDocsProduct::GetSelectedProduct( );
+					$pManual = PonyDocsProductManual::GetCurrentManual( $product );
+					$version = PonyDocsProductVersion::GetSelectedVersion( $product );
+					if(!$pManual) {
+						continue;
+					}
+					$language = $pManual->getLanguage();
+
+					if (strpos($match[2], '#') === 0) {
+						continue;
+					}
+
+					/**
+					 * Does this topic exist?  Look for a topic with this name tagged for the current version.
+					 * If nothing is found, we create a new article.
+					 */
+					$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $pManual->getShortName( ) . ':' . $match[1];
+					$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
+											"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%:".$language."'",
+											"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . ':' . $language . "'" ), __METHOD__ );
+
+					$topicTitle = $sqlMatch . ':' . $version . ':' . $language;
+					$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
+
+					PonyDocsExtension::updatePageLinks($title, $topicTitle);
+				}
+			}
+		}
+		
+		return true;
+	} // end onLinksUpdateComplete
 
 }
 

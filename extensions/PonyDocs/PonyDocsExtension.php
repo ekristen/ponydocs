@@ -756,6 +756,8 @@ $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditForm
 // Have the extension do the database upgrades
 $wgHooks['LoadExtensionSchemaUpdates'][] = 'PonyDocsExtension::LoadExtensionSchemaUpdates';
 
+$wgHooks['LinksUpdateComplete'][] = 'PonyDocsExtension::onLinksUpdateComplete';
+
 /**
  * End of file.
  */

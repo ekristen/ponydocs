@@ -3,3 +3,4 @@ LocalSettings.php*
 config/LocalSettings.php
 .DS_Store
 images/*
+logs/*
