@@ -991,7 +991,7 @@ class PonyDocsExtension
 
 			while( $row = $dbr->fetchObject( $res ))
 			{
-				if( preg_match( '/^V:' . $editPonyDocsProduct . ':(.*)/i', $row->cl_to, $vmatch ))
+				if( preg_match( '/^V:' . $editPonyDocsProduct . ':(.*):(.*)/i', $row->cl_to, $vmatch ))
 				{
 					$topic = $row->cl_sortkey;
 					$duplicateVersions[] = $vmatch[1];
@@ -1169,18 +1169,21 @@ HEREDOC;
 								}
 							}
 
+							$language = $product->getLanguage();
+
 							/**
 							 * Does this topic exist?  Look for a topic with this name tagged for the current version and current product.
 							 * If nothing is found, we create a new article.
 							 */
 							$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $manual . ':' . $topic;
 							$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
-													"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
-													"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
+													"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%:".$language."'",
+													"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . ':' . $language . "'" ), __METHOD__ );
 
 							if( !$res->numRows( )) 
 							{
-								$topicTitle = $sqlMatch . ':' . $version;
+								$topicTitle = $sqlMatch . ':' . $version . ':' . $language;
+								$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
 
 								$tempArticle = new Article( Title::newFromText( $topicTitle ));
 								if( !$tempArticle->exists( ))
@@ -1195,7 +1198,7 @@ HEREDOC;
 									else
 										$content = '= ' . $topicTitle . " =\n";
 
-									$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
+									$content .= "\n[[Category:V:" . $product . ':' . $version . ':' . $language . "]]";
 
 									$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
 									if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
@@ -1212,7 +1215,10 @@ HEREDOC;
 							$product = $pieces[1];
 							$version = PonyDocsProductVersion::GetSelectedVersion( $product );
 							$version = $pieces[4];
-							$topicTitle = $match[1];
+							$language = PONDOCS_LANGUAGE_DEFAULT;
+
+							$topicTitle = $match[1] . ':' . $language;
+							$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
 
 							$tempArticle = new Article( Title::newFromText( $topicTitle ));
 							if( !$tempArticle->exists( ))
@@ -1227,7 +1233,7 @@ HEREDOC;
 								else
 									$content = '= ' . $topicTitle . " =\n";
 
-								$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
+								$content .= "\n[[Category:V:" . $product . ':' . $version . ':' . $language . "]]";
 
 								$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
 								if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
@@ -1279,18 +1285,21 @@ HEREDOC;
 						// Cancel out.
 						return true;
 					}
+					$language = $pManual->getLanguage();
+
 					/**
 					 * Does this topic exist?  Look for a topic with this name tagged for the current version.
 					 * If nothing is found, we create a new article.
 					 */
 					$sqlMatch = PONYDOCS_DOCUMENTATION_PREFIX . $product . ':' . $pManual->getShortName( ) . ':' . $match[1];
 					$res = $dbr->select( 	'categorylinks', 'cl_sortkey', array(
-											"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%'",
-											"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . "'" ), __METHOD__ );
+											"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" . $dbr->strencode( strtolower( $sqlMatch )) . ":%:".$language."'",
+											"cl_to = 'V:" . $dbr->strencode( $product ) . ':' . $dbr->strencode( $version ) . ':' . $language . "'" ), __METHOD__ );
 
 					if( !$res->numRows( ))
 					{
-						$topicTitle = $sqlMatch . ':' . $version;
+						$topicTitle = $sqlMatch . ':' . $version . ':' . $language;
+						$topicTitle = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $topicTitle);
 
 						$tempArticle = new Article( Title::newFromText( $topicTitle ));
 						if( !$tempArticle->exists( ))
@@ -1304,7 +1313,7 @@ HEREDOC;
 							else
 								$content = '= ' . $topicTitle . " =\n";
 
-							$content .= "\n[[Category:V:" . $product . ':' . $version . "]]";
+							$content .= "\n[[Category:V:" . $product . ':' . $version . ':' . $language . "]]";
 
 							$tempArticle->doEdit( $content, 'Auto-creation of topic ' . $topicTitle . ' via reference from ' . $title->__toString() . '.', EDIT_NEW );
 							if (PONYDOCS_AUTOCREATE_DEBUG) {error_log("DEBUG [" . __METHOD__ . ":" . __LINE__ . "] Auto-created $topicTitle using link " . $match[1] . " in " . $title->__toString( ));}
@@ -1601,7 +1610,7 @@ HEREDOC;
 		//if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)([|]?([A-Za-z0-9,:.'_!@\"()#$ -]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
 		if( $doWikiLinkSubstitution && preg_match_all( "/\[\[([A-Za-z0-9,:._ -]*)(\#[A-Za-z0-9 ._-]+)?([|]?([A-Za-z0-9,:.'_?!@\/\"()#$ -{}]*))\]\]/", $text, $matches, PREG_SET_ORDER ))
 		{
-			//echo '<pre>'; print_r( $matches ); die();
+			//prd($matches);
 			/**
 			 * For each, find the topic in categorylinks which is tagged with currently selected version then produce
 			 * link and replace in output ($text).  Simple!
@@ -1609,6 +1618,13 @@ HEREDOC;
 			$selectedProduct = PonyDocsProduct::GetSelectedProduct();
 			$selectedVersion = PonyDocsProductVersion::GetSelectedVersion( $selectedProduct );
 			$pManual = PonyDocsProductManual::GetCurrentManual( $selectedProduct );
+
+			if ($pManual) {
+				$language = $pManual->getLanguage();
+			} else {
+				$language = PONYDOCS_LANGAUGE_DEFAULT;
+			}
+
 			// No longer bail on $pManual not being set.  We should only need it 
 			// for [[Namespace:Topic]]
 
@@ -1626,8 +1642,8 @@ HEREDOC;
 					if( 3 == sizeof( $pieces ))
 					{
 						$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-							array( 	"LOWER(cl_sortkey) LIKE '" . $dbr->strencode( strtolower( $match[1] )) . ":%'",
-									"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ), __METHOD__ );
+							array( 	"LOWER(cl_sortkey) LIKE '" . $dbr->strencode( strtolower( $match[1] )) . ":%:".$language."'",
+									"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . ':' . $language . "'" ), __METHOD__ );
 
 						if( $res->numRows( ))
 						{
@@ -1683,17 +1699,32 @@ HEREDOC;
 
 						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
 					}
+
+					/**
+					 * [[Documentation:Product:User:Topic:Version:Language]] => LANGUAGE/Documentation/Product/Version/User/Topic
+					 */
+					else if ( 6 == sizeof( $pieces ))
+					{
+						$href = str_replace( '$1', $language . '/' . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $pieces[1] . '/' . $pieces[4] . '/' . $pieces[2] . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $pieces[3] ), $wgArticlePath );
+						$href .= $match[2];
+
+						$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
+					}
 				}
 				else
 				{
 					// Check if our title is in Documentation and manual is set, if not, don't modify the match.
-					if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*/i', $wgTitle->__toString( )) || !isset($pManual))
+					if(!preg_match( '/^' . PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*:.*/i', $wgTitle->__toString( )) || !isset($pManual))
 						continue;
-					$page = 'documentation:' . strtolower( $selectedProduct . ':' . $pManual->getShortName( )) . ':' . strtolower( $match[1] );
+
+					$pieces = explode(':', $wgTitle->__toString());
+
+					$page = PONYDOCS_DOCUMENTATION_PREFIX . $selectedProduct . ':' . $pManual->getShortName( ) . ':' . $match[1];
+					$page = preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $page);
 
 					$res = $dbr->select( 'categorylinks', 'cl_sortkey', 
-						array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" .  $dbr->strencode( $page )  . ":%'",
-								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . "'" ), __METHOD__ );
+						array( 	"LOWER(cast(cl_sortkey AS CHAR)) LIKE '" .  $dbr->strencode( strtolower($page) )  . ":%:".$language."'",
+								"cl_to = 'V:" . $selectedProduct . ":" . $selectedVersion . ':' . $language . "'" ), __METHOD__ );
 
 					/**
 					 * We might need to make it a "non-link" at this point instead of skipping it.
@@ -1706,14 +1737,33 @@ HEREDOC;
 					 */
 					$row = $dbr->fetchObject( $res );
 
-					$href = str_replace( '$1', PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/' . $pManual->getShortName( ) . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $match[1] ), $wgArticlePath );
+					if ($language != PONYDOCS_LANGUAGE_DEFAULT)
+						$newlang = $language . '/';
+					else
+						$newlang = '';
+
+					// If the link is to a section, remove section related characters.
+					$link_name = $match[1];
+					if (strpos($match[2], '#') == 0) {
+						$link_name = str_replace("#", '', $match[2]);
+						$link_name = str_replace("_", ' ', $link_name);
+						$match[1] = $pieces[3];
+					}
+					else if (strpos($match[2], '#') !== -1) {
+						
+					}
+					else {
+						
+					}
+
+					$href = str_replace( '$1', $newlang . PONYDOCS_DOCUMENTATION_NAMESPACE_NAME . '/' . $selectedProduct . '/' . $selectedVersion . '/' . $pManual->getShortName( ) . '/' . preg_replace( '/([^' . str_replace( ' ', '', Title::legalChars( )) . '])/', '', $match[1] ), $wgArticlePath );
 					$href .= $match[2];
 
-					$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $match[1] ) . ']', $text );
-
+					$text = str_replace( $match[0], '[http://' . $_SERVER['SERVER_NAME'] . $href . ' ' . ( strlen( $match[4] ) ? $match[4] : $link_name ) . ']', $text );
 				}
 			}
 		}
+
 		return true;
 	}
 
@@ -2656,7 +2706,10 @@ HEREDOC;
 
 		return "[[{$topicName}|{$link_name}]]";
 	}
+
 }
+
+
 
 /**
  * End of file.
