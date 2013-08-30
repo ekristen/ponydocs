@@ -12,7 +12,8 @@
 	<link rel="stylesheet" type="text/css" href="<?php $this->text('stylepath') ?>/<?php $this->text('stylename') ?>/main.css?<?php echo $GLOBALS['wgStyleVersion'] ?>" />
 	<?php print Skin::makeGlobalVariablesScript($this->data); ?>
 	<script type="text/javascript" src="<?php $this->text('stylepath') ?>/<?php $this->text('stylename') ?>/jquery.js"></script>
-	<?php $this->html('headscripts') ?>
+	<?php $this->html('headscripts'); ?>
+	<?php print $wgOut->getScript(); ?>
 	<script type="text/javascript">
 		function ponyDocsOnLoad() {}
 
