@@ -2093,7 +2093,7 @@ if ( \$wgCommandLineMode ) {
 
 # Setup Blacklists
 \$wgBlacklistOps['useRegex'] = true;
-\$wgWhitelist['sysop']['read'] = $wgBlacklist['*']['read'] = array('^Special:(Export|ActiveUsers|ListUsers|IpBlocklist|Log|AllMessages)\$');
+\$wgWhitelist['sysop']['read'] = \$wgBlacklist['*']['read'] = array('^Special:(Export|ActiveUsers|ListUsers|IpBlocklist|Log|AllMessages)\$');
 
 # Include Other Extensions
 include_once(\$IP . \"/extensions/Blacklist.php\");
