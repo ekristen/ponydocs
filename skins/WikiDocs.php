@@ -637,6 +637,10 @@ EOL;
 
 		$output_docs_toolbox = implode("\n", $docs_toolbox_items);
 
+		if (empty($docs_toolbox_items)) {
+			return '';
+		}
+
 		$output =<<<EOL
 			<div class="well well-small">
 				<ul class="nav nav-list">
@@ -660,6 +664,10 @@ EOL;
 		}
 
 		$output_docs_toolbox = implode("\n", $docs_toolbox_items);
+
+		if (empty($docs_toolbox_items)) {
+			return '';
+		}
 
 		$output =<<<EOL
 			<div class="well well-small">

@@ -677,9 +677,6 @@ class PonyDocsTemplate extends QuickTemplate {
 				$latest = PonyDocsProductVersion::GetLatestVersionForUser($product->getShortName());
 			}
 
-			//$latest = PonyDocsProductVersion::GetLatestVersionForUser($product->getShortName());
-			//$latest = PonyDocsProductVersion::GetLatestReleasedVersion($product->getShortName());
-
 			if (!isset($latest) || empty($latest))
 				continue;
 
@@ -697,7 +694,6 @@ class PonyDocsTemplate extends QuickTemplate {
 					$toc_versions = $toc->getVersions();
 					if (empty($toc_versions))
 						continue;
-					//$subitems[] = array('label' => $manual->getLongName(), 'url' => '/Documentation/' . $product->getShortName() . '/' . $latest->getVersionName() . '/' . $manual->getShortName());
 					$subitems[] = array('label' => $manual->getLongName(), 'url' => '/'.PONYDOCS_DOCUMENTATION_NAMESPACE_NAME.'/' . $product->getShortName() . '/latest/' . $manual->getShortName());
 				}
 			}
