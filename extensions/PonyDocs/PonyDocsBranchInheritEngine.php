@@ -18,17 +18,19 @@ class PonyDocsBranchInheritEngine {
 	 *
 	 * @param $topicTitle string The name of the internal topic.
 	 * @param $version PonyDocsVersion The target Version
+	 * @param $language The language code of the new topic
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
-	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance 
-	 * 							reasons)
+	 * @param $split boolean split it from the old version.
+	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance reasons)
 	 * @returns boolean
 	 */
 	static function branchTopic($topicTitle, $version, $language, $tocSection, $tocTitle, $deleteExisting = false, $split = true, $skipTOC = false) {
 		// Clear any hooks so no weirdness gets called after we create the 
 		// branch
 		$wgHooks['ArticleSave'] = array();
+
 		if(!preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)$/', $topicTitle, $match)) {
 			throw new Exception("Invalid Title to Branch From -- " . print_r($match, true));
 		}
@@ -69,14 +71,15 @@ class PonyDocsBranchInheritEngine {
 				// split.  Cancel out.
 				throw new Exception("When calling branchTitle, there were conflicts and purge was not requested and we're not splitting.");
 			}
-
 		}
+
 		// Load existing article to branch from
 		$existingArticle = PonyDocsArticleFactory::getArticleByTitle($topicTitle);
 		if(!$existingArticle->exists()) {
 			// No such title exists in the system
 			throw new Exception("Invalid Title to Branch From.  Target Article does not exist:" . $topicTitle);
 		}
+
 		$title = PONYDOCS_DOCUMENTATION_PREFIX . $product->getShortName() . ':' . $manual->getShortName() . ':' . $title . ':' . $version->getVersionName() . ':' . $language;
 
 		$newArticle = PonyDocsArticleFactory::getArticleByTitle($title);
@@ -122,7 +125,7 @@ class PonyDocsBranchInheritEngine {
 		// Set version and manual
 		$existingArticle->doEdit($existingContent, "Removed versions from existing article when branching Topic " . $topicTitle, EDIT_UPDATE);
 		// Clear categories tags from new article content
-		$newContent = preg_replace("/\[\[Category:V:([^\]]*)]]/", "", $newContent);
+		$newContent = preg_replace("/\[\[Category:V:([^\]]*):([^\]]*)\]\]/", "", $newContent);
 		// add new category tags to new content
 		foreach($newVersions as $version) {
 			$newContent .= "[[Category:V:" . $productName . ":" . $version . ":" . $language . "]]";
@@ -135,6 +138,7 @@ class PonyDocsBranchInheritEngine {
 		if(!$skipTOC) {
 			self::addToTOC($product, $manual, $version, $language, $tocSection, $tocTitle);
 		}
+
 		return $title;
 	}
 
@@ -144,6 +148,7 @@ class PonyDocsBranchInheritEngine {
 	 *
 	 * @param $topicTitle string The internal mediawiki title of the article.
 	 * @param $version PonyDocsVersion The target Version
+	 * @param $language The language code of the target topic
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
 	 * @param $deleteExisting boolean Should we purge any existing conflicts?
@@ -156,6 +161,7 @@ class PonyDocsBranchInheritEngine {
 		// Clear any hooks so no weirdness gets called after we save the 
 		// inherit
 		$wgHooks['ArticleSave'] = array();
+
 		if(!preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)$/', $topicTitle, $match)) {
 			throw new Exception("Invalid Title to Inherit From: " . $topicTitle);
 		}
@@ -207,6 +213,7 @@ class PonyDocsBranchInheritEngine {
 			$existingArticle->doEdit($content, "Inherited topic " . $topicTitle . " with version: " . $productName . ":" . $version->getVersionName() . " and language " . $language, EDIT_UPDATE);
 		}
 		// Okay, update our toc.
+		// TODO: Check if it is in the TOC first, if it does, SKIP!
 		if(!$skipTOC) {
 			$manual = PonyDocsProductManual::GetManualByShortName($productName, $manual, $language);
 			self::addToTOC($product, $manual, $version, $language, $tocSection, $tocTitle);
@@ -544,9 +551,11 @@ class PonyDocsBranchInheritEngine {
 	 */
 	static function getConflicts($product, $topicTitle, $targetVersion, $targetLanguage) {
 		$dbr = wfGetDB(DB_SLAVE);
+
 		if(!preg_match('/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*):(.*):(.*):(.*)/', $topicTitle, $match)) {
 			throw new Exception("Invalid Title to Branch From");
 		}
+
 		$productName = $match[1];
 		$manual = $match[2];
 		$title = $match[3];
@@ -565,6 +574,7 @@ class PonyDocsBranchInheritEngine {
 			}
 			return $conflicts;
 		}
+
 		// One last ditch effort.  Determine if any page exists that doesn't have a category link association
 		// Or when its base version is not in its categories.
 		$destinationTitle = PONYDOCS_DOCUMENTATION_PREFIX . $productName . ':' . $manual . ':' . $title . ':' . $targetVersion->getVersionName() . ':' . $targetLanguage;
@@ -577,6 +587,10 @@ class PonyDocsBranchInheritEngine {
 	}
 
 
+	/**
+	 * Branch a Product from source language to a target language
+	 * 
+	 */
 	static function branchProducts($sourceLanguage, $targetLanguage) {
 		$old_title = PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE . ':' . $sourceLanguage;
 		$new_title = PONYDOCS_DOCUMENTATION_PRODUCTS_TITLE . ':' . $targetLanguage;

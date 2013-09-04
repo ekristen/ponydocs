@@ -50,8 +50,14 @@ SplunkBranchInherit = function() {
 						sourceVersion = $('#versionselect_sourceversion').val();
 					}
 					targetVersion = $('#versionselect_targetversion').val();
-					
-					sourceLanguage = $('#languageselect_sourcelanguage').val();
+
+                    if ($('#force_sourceLanguage').length != 0) {
+                        sourceLanguage = $('#force_sourceLanguage').val();
+                    }
+                    else {
+					    sourceLanguage = $('#languageselect_sourcelanguage').val();
+                    }
+
 					targetLanguage = $('#languageselect_targetlanguage').val();
 					
 					if(sourceVersion == targetVersion && sourceLanguage == targetLanguage) {

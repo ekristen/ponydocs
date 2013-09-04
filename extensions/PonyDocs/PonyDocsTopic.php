@@ -216,7 +216,7 @@ class PonyDocsTopic
 	}
 
 	/**
-	 * CHANGE THIS TO CACHE THESE IN MEMCACHE OR WHATEVER.
+	 * TODO: CACHE THIS -- MAYBE MEMCACHED OR PONDOCS CACHE TABLE
 	 *
 	 * This takes a title (text form) and extracts the H1 content for the title and returns it.  This is used in display (heading and TOC).
 	 * 
@@ -231,6 +231,7 @@ class PonyDocsTopic
 		//$content = preg_replace( '/\<nowiki\>(.*)\<\/nowiki\>/i', '', $article->getContent( ));		
 		if( !preg_match( '/^\s*=(.*)=/D', $article->getContent( ), $matches ))
 			return false;
+
 		return $matches[1];
 	}
 
@@ -334,7 +335,6 @@ class PonyDocsTopic
 	 */
 	public function parseSections( )
 	{
-
 		//$content = preg_replace( '/\<nowiki\>(.*)\<\/nowiki\>/i', '', $this->pArticle->mContent );
 		$content = str_replace("<nowiki>", "", $this->pArticle->mContent);
 		$content = str_replace("</nowiki>", "", $content);

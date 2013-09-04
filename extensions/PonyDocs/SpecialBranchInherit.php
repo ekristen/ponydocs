@@ -308,11 +308,23 @@ class SpecialBranchInherit extends SpecialPage
 					$fp = fopen($path, "w+");
 					fputs($fp, "Completed " . $numOfTopicsCompleted . " of " . $numOfTopics . " Total: " . ((int)($numOfTopicsCompleted / $numOfTopics * 100)) . "%");
 					fclose($fp);
+					
+					/**
+					 * ignore
+					 * 
+					 * Do not do anything with the topci
+					 */
 					if(isset($topic['action']) && $topic['action'] == "ignore") {
 						print("<div class=\"normal\">Ignoring topic: " . $topic['title'] . "</div>");
 						$numOfTopicsCompleted++;
 						continue;
 					}
+					
+					/**
+					 * branchpurge
+					 * 
+					 * Branch topic to new target version and target language and remove existing topic
+					 */
 					else if(isset($topic['action']) && $topic['action'] == "branchpurge") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and remove existing topic.</div>");
@@ -322,6 +334,12 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
 					}
+					
+					/**
+					 * branch
+					 * 
+					 * branch topic to new target version and language
+					 */
 					else if(isset($topic['action']) && $topic['action'] == "branch") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . "</div>");
@@ -331,6 +349,12 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
 					}
+
+					/**
+					 * branchsplit
+					 * 
+					 * branch current topic to new target version and target language, and REMOVE NEW VERSION FROM OLD VERSION!?!?!?!!
+					 */
 					else if(isset($topic['action']) && $topic['action'] == "branchsplit") {
 						try {
 							print("<div class=\"normal\">Attempting to branch topic " . $topic['title'] . " and split from existing topic.</div>");
@@ -340,6 +364,12 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
 					}
+
+					/**
+					 * inherit
+					 * 
+					 * Add new target version to the existing topic (this will only work within the same language)
+					 */
 					else if(isset($topic['action']) && $topic['action'] == "inherit") {
 						try {
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . "</div>");
@@ -349,6 +379,12 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
 					}
+
+					/**
+					 * inheritpurge
+					 * 
+					 * inherity and purge ... ?????
+					 */
 					else if(isset($topic['action']) && $topic['action'] == "inheritpurge") {
 						try {
 							print("<div class=\"normal\">Attempting to inherit topic " . $topic['title'] . " and remove existing topic.</div>");
@@ -358,6 +394,7 @@ class SpecialBranchInherit extends SpecialPage
 							print("<div class=\"error\">Exception: " . $e->getMessage() . "</div>");
 						}
 					}
+
 					$numOfTopicsCompleted++;
 				}
 			}
@@ -420,9 +457,12 @@ class SpecialBranchInherit extends SpecialPage
 		$versions = PonyDocsProductVersion::GetVersions($forceProduct);
 
 		if(isset($_GET['titleName'])) {
+			$titleParts = explode(":", $_GET['titleName']);
+			$titleLanguage = $titleParts[count($titleParts)-1];
 			?>
 			<input type="hidden" id="force_titleName" value="<?php echo $_GET['titleName'];?>" />
 			<input type="hidden" id="force_sourceVersion" value="<?php echo PonyDocsProductVersion::GetVersionByName($forceProduct, PonyDocsProductVersion::GetSelectedVersion($forceProduct))->getVersionName();?>" />
+			<input type="hidden" id="force_sourceLanguage" value="<?php echo $titleLanguage; ?>" />
 			<input type="hidden" id="force_manual" value="<?php echo $forceManual; ?>" />
 			<?php
 		}
@@ -519,17 +559,35 @@ class SpecialBranchInherit extends SpecialPage
 
 			<h2>Choose a Source Language</h2>
 			<?php
-				global $wgLanguageNames;
-				global $wgISO639LanguageCodes;
-				$languages = PonyDocsProduct::getTranslations($forceProduct);
-			?>
-			<select name="language" id="languageselect_sourcelanguage">
-				<?php foreach ($languages as $language): ?>
-				<option value="<?php print $language; ?>"><?php print $wgISO639LanguageCodes[$language]; ?></option>
-				<?php endforeach; ?>
-			</select>
+				// Determine if topic was set, if so, we should fetch version from currently selected version.
+				if(isset($_GET['titleName'])) {
+					global $wgLanguageNames;
+					global $wgISO639LanguageCodes;
+					$languages = PonyDocsProduct::getTranslations($forceProduct);
 
-			
+					$titleParts = explode(":", $_GET['titleName']);
+					$titleLanguage = $titleParts[count($titleParts)-1];
+					?>
+					You have selected a topic.  The current language of the topic is <?php print $wgISO639LanguageCodes[$titleLanguage]; ?>
+					<?php
+				}
+				else {
+					?>
+					<?php
+						global $wgLanguageNames;
+						global $wgISO639LanguageCodes;
+						$languages = PonyDocsProduct::getTranslations($forceProduct);
+					?>
+					<select name="language" id="languageselect_sourcelanguage">
+						<?php foreach ($languages as $language): ?>
+						<option value="<?php print $language; ?>"><?php print $wgISO639LanguageCodes[$language]; ?></option>
+						<?php endforeach; ?>
+					</select>
+					<?php
+				}
+			?>
+
+
 			<h2>Choose a Target Version</h2>
 			<select name="version" id="versionselect_targetversion">
 				<?php
