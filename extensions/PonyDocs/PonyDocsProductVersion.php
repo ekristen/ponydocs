@@ -528,7 +528,7 @@ class PonyDocsProductVersion
 
 	static public function & GetLatestVersionForUser( $productName )
 	{
-		$sVersionListForUser = self::GetVersionsForUser( 'EMP' );
+		$sVersionListForUser = self::GetVersionsForUser( $productName );
 
 		if ( sizeof ($sVersionListForUser))
 			return array_pop($sVersionListForUser);
