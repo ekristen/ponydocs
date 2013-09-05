@@ -21,14 +21,13 @@ class PonyDocsBranchInheritEngine {
 	 * @param $language The language code of the new topic
 	 * @param $tocSection The TOC section this title resides in.
 	 * @param $tocTitle The toc title that references this topic.
-	 * @param $deleteExisting boolean Should we purge any existing conflicts?
+	 * @param $deleteExisting boolean Should we purge any existing conflicts? (DEPRECATED -- THIS FEATURE IS DISABLED)
 	 * @param $split boolean split it from the old version.
 	 * @param $skipTOC boolean Should we skip adding to the TOC (for performance reasons)
 	 * @returns boolean
 	 */
 	static function branchTopic($topicTitle, $version, $language, $tocSection, $tocTitle, $deleteExisting = false, $split = true, $skipTOC = false) {
-		// Clear any hooks so no weirdness gets called after we create the 
-		// branch
+		// Clear any hooks so no weirdness gets called after we create the branch
 		$wgHooks['ArticleSave'] = array();
 
 		// We no longer need PURGE
@@ -499,6 +498,7 @@ class PonyDocsBranchInheritEngine {
 		if($title == false) {
 			throw new Exception("TOC does not exist for " . $manual->getShortName() . " with version " . $version->getVersionName());
 		}
+
 		$title = Title::newFromText($title);
 		$wgTitle = $title;
 		$article = new Article($title);
@@ -553,6 +553,7 @@ class PonyDocsBranchInheritEngine {
 	 *
 	 * @param $topicTitle string The Topic name in PONYDOCS_DOCUMENTATION_PREFIX . '.*:.*:.*:.*' format
 	 * @param $targetVersion PonyDocsVersion the version to search for
+	 * @param $targetLanguage Language Code for the topic
 	 * @return Array of conflicting topic names, otherwise false if no conflict 
 	 * exists.
 	 */

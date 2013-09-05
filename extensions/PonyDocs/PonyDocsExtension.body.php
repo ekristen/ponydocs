@@ -926,6 +926,10 @@ class PonyDocsExtension
 		// selected version.
 		if(preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*)/i', $title->__toString( ))) {
 			PonyDocsExtension::ClearNavCache();
+
+			// Make sure there are no spaces or tabs
+			// between #topic: and topic shortname
+			$text = preg_replace('/topic:[ \t]+/', 'topic:', $text);
 		}
 
 		$dbr = wfGetDB( DB_SLAVE );
@@ -933,9 +937,8 @@ class PonyDocsExtension
 		/**
 		 * Check to see if we have any version tags -- if we don't we don't care about this and can skip and return true.
 		 */
-		if( preg_match_all( '/\[\[Category:V:([A-Za-z0-9 _.-]*):([A-Za-z0-9 _.-]*)\]\]/i', $text, $matches, PREG_SET_ORDER ))
+		if( preg_match_all( '/\[\[Category:V:([A-Za-z0-9 _.-]*):([A-Za-z0-9 _.-]*):([A-Za-z0-9 _.-]*)\]\]/i', $text, $matches, PREG_SET_ORDER ))
 		{
-
 			$categories = array( );
 			foreach( $matches as $m )
 				$categories[] = $m[2];
@@ -966,22 +969,31 @@ class PonyDocsExtension
 
 			if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '([:^]+):([:^]+):([:^]+):([:^]+):([:^]+)/', $title->__toString( ), $titleMatch ))
 			{
+				foreach ($matches as $match) {
+					$clto[] = "V:{$titleMatch[1]}:{$match[2]}:{$match[3]}";
+				}
+
 				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
 						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':' . $titleMatch[3] )) . ":%' " .
 						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . ':' . $titleMatch[3] . ':' . $titleMatch[4] )) . "' " .
-						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
+						"AND cl_to IN ('" . implode("','", $clto) . "')";
 			}
 			else if( preg_match( '/' . PONYDOCS_DOCUMENTATION_PREFIX . '(.*):(.*)TOC(.*):(.*)/', $title->__toString( ), $titleMatch ))
 			{
+				foreach ($matches as $match) {
+					$clto[] = "V:{$titleMatch[1]}:{$match[2]}:{$match[3]}";
+				}
+
 				$q =	"SELECT cl_to, cl_sortkey FROM categorylinks " .
 						"WHERE LOWER(cl_sortkey) LIKE 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' )) . "%:".$titleMatch[4]."' " .
 						"AND LOWER(cl_sortkey) <> 'documentation:" . $dbr->strencode( strtolower( $titleMatch[2] . 'TOC' . $titleMatch[3] . ":" . $titleMatch[4] )) . "' " .
-						"AND cl_to IN ('V:" . $titleMatch[1] . ":" . implode( "','V:" . $titleMatch[1] . ":", $categories ) . "')";
+						"AND cl_to IN ('" . implode("','", $clto) . "')";
 			}
 			else
 			{
 				return true;
 			}
+
 			$res = $dbr->query( $q, __METHOD__ );
 			if( !$res->numRows( )) {
 				return true;
@@ -1072,23 +1084,25 @@ HEREDOC;
 		return true;
 	}
 
+
 	/**
 	 * This is used to scan a topic in the Documentation namespace when saved for wiki links, and when it finds them, it should
 	 * create the topic in the namespace (if it does not exist) then set the H1 to the alternate text (if supplied) and then
 	 * tag it for the versions of the currently being viewed page?  We can assume Documentation namespace.
 	 * 
-	 * 	[[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
-	 *	[[Dev:HowToFoo|How To Foo]] <- Creates Dev:HowToFoo and sets H1.
+	 *  [[SomeTopic|My Topic Here]] <- Creates Documentation:<currentProduct>:<currentManual>:SomeTopic:<selectedVersion> and sets H1.
+	 *  [[Dev:HowToFoo|How To Foo]] <- Creates Dev:HowToFoo and sets H1.
 	 *  [[Documentation:User:SomeTopic|Some Topic]] <- To create link to another manual, will use selected version.
-	 *	[[Documentation:User:SomeTopic:1.0|Topic]] <- Specific title in another manual.
-	 *	[[:Main_Page|Main Page]] <- Link to a page in the global namespace.
+	 *  [[Documentation:User:SomeTopic:1.0|Topic]] <- Specific title in another manual.
+	 *  [[:Main_Page|Main Page]] <- Link to a page in the global namespace.
 	 *
-				 * Forms which can exist are as such:
-				 * [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
-				 * [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
-				 * [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
-				 * [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
-				 * [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
+	 * Forms which can exist are as such:
+	 *  [[TopicNameOnly]]								Links to Documentation:<currentProduct>:<currentManual>:<topicName>:<selectedVersion>
+	 *  [[TopicName#WithSection]]						Links to TopicName's Product, Manual, Version, Topic Section
+	 *  [[Documentation:Manual:Topic]]					Links to a different manual from a manual (uses selectedVersion and selectedProduct).
+	 *  [[Documentation:Product:Manual:Topic]]			Links to a different product and a different manual.
+	 *  [[Documentation:Product:Manual:Topic:Version]]	Links to a different product and a different manual.
+	 *  [[Dev:SomeTopicName]]							Links to another namespace and topic explicitly.
 	 *
 	 * When creating the link in Documentation namespace, it uses the CURRENT MANUAL being viewed.. and the selected version?
 	 */

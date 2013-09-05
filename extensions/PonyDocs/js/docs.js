@@ -265,18 +265,18 @@ SplunkBranchInherit = function() {
 									html += '<option value="ignore">Ignore</option>';
 								}
 								if(defaultAction == 'branch') {
-									html += '<option value="branchpurge" selected="selected">Branch - Purge Existing</option>';
+									//html += '<option value="branchpurge" selected="selected">Branch - Purge Existing</option>';
 									html += '<option value="branchsplit">Branch - Split</option>';
 								}
 								else {
-									html += '<option value="branchpurge">Branch - Purge Existing</option>';
+									//html += '<option value="branchpurge">Branch - Purge Existing</option>';
 									html += '<option value="branchsplit">Branch - Split</option>';
 								}
 								if(defaultAction == 'inherit') {
-									html += '<option value="inheritpurge" selected="selected">Inherit - Purge Existing</option>';
+									//html += '<option value="inheritpurge" selected="selected">Inherit - Purge Existing</option>';
 								}
 								else {
-									html += '<option value="inheritpurge">Inherit - Purge Existing</option>';
+									//html += '<option value="inheritpurge">Inherit - Purge Existing</option>';
 								}
 							}
 							html += '</select><input type="hidden" name="toctitle" value="' + el['toctitle'] + '" /></td></tr>';
