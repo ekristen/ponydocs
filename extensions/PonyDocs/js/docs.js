@@ -60,8 +60,8 @@ SplunkBranchInherit = function() {
 
 					targetLanguage = $('#languageselect_targetlanguage').val();
 					
-					if(sourceVersion == targetVersion && sourceLanguage == targetLanguage) {
-						alert('Target version and langugae can not be the same as source version and language.');
+					if(sourceVersion == targetVersion && sourceLanguage == targetLanguage && !forceTitle) {
+						alert('Target version and language can not be the same as source version and language.');
 					}
 					else {
 						$('#docbranchinherit .sourceversion').html(sourceVersion);
