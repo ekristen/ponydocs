@@ -224,6 +224,13 @@ class PonyDocsProduct
 		return self::$sDefinedProductList;
 	}
 
+
+	/**
+	 * Return list of ALL defined products by querying the database directly
+	 * 
+	 * @static
+	 * @returns array
+	 */
 	static public function GetDefinedProductsBySQL( $language = PONYDOCS_LANGUAGE_DEFAULT ) {
 		global $IP;
 		require_once( "$IP/includes/GlobalFunctions.php" );
@@ -296,6 +303,7 @@ class PonyDocsProduct
 
 		return $sProductList;
 	}
+
 
 	/**
 	 * Our product list is a map of 'short' name to the PonyDocsProduct object.  Returns it, or null if not found.
