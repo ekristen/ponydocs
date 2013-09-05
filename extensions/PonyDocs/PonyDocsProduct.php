@@ -230,6 +230,8 @@ class PonyDocsProduct
 
 		$sProductList = array();
 
+		$pNamespaceId = PONYDOCS_DOCUMENTATION_NAMESPACE_ID;
+
 		$dbr = wfGetDB(DB_SLAVE);
 		$sql = "SELECT
 					p.page_id, p.page_title, r.rev_text_id, t.old_id, t.old_text
@@ -242,7 +244,7 @@ class PonyDocsProduct
 					text AS t
 					ON r.rev_text_id = t.old_id
 				WHERE
-					p.page_namespace = 100
+					p.page_namespace = '{$pNamespaceId}'
 					AND
 					p.page_title = 'Products:{$language}'";
 		$res = $dbr->query($sql);
