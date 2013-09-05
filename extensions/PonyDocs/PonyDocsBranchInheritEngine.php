@@ -31,6 +31,10 @@ class PonyDocsBranchInheritEngine {
 		// branch
 		$wgHooks['ArticleSave'] = array();
 
+		// We no longer need PURGE
+		// Always set deleteExiting to FALSE
+		$deleteExisting = false;
+
 		if(!preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)$/', $topicTitle, $match)) {
 			throw new Exception("Invalid Title to Branch From -- " . print_r($match, true));
 		}
@@ -161,6 +165,9 @@ class PonyDocsBranchInheritEngine {
 		// Clear any hooks so no weirdness gets called after we save the 
 		// inherit
 		$wgHooks['ArticleSave'] = array();
+
+		// Always 
+		$deleteExisting = true;
 
 		if(!preg_match('/^' . PONYDOCS_DOCUMENTATION_PREFIX . '([^:]+):([^:]+):([^:]+):([^:]+):([^:]+)$/', $topicTitle, $match)) {
 			throw new Exception("Invalid Title to Inherit From: " . $topicTitle);
