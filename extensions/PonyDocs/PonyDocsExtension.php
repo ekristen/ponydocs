@@ -13,6 +13,10 @@ if( !defined( 'MEDIAWIKI' ))
 	die( "PonyDocs MediaWiki Extension" );
 
 require_once( "$IP/extensions/PonyDocs/PonyDocs.config.php" );
+
+if( defined( 'MEDIAWIKI_INSTALL' ))
+	return;
+
 require_once( "$IP/extensions/PonyDocs/PonyDocs.Languages.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsCache.php" );
 require_once( "$IP/extensions/PonyDocs/PonyDocsExtension.body.php" );
@@ -757,6 +761,8 @@ $wgHooks['EditPage::showEditForm:fields'][] = 'PonyDocsExtension::onShowEditForm
 $wgHooks['LoadExtensionSchemaUpdates'][] = 'PonyDocsExtension::LoadExtensionSchemaUpdates';
 
 $wgHooks['LinksUpdateComplete'][] = 'PonyDocsExtension::onLinksUpdateComplete';
+
+$wgHooks['UnitTestsList'][] = 'PonyDocsExtension::onUnitTestsList';
 
 /**
  * End of file.
