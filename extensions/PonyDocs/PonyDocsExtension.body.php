@@ -1183,7 +1183,8 @@ HEREDOC;
 								}
 							}
 
-							$language = $product->getLanguage();
+              $tempproduct = PonyDocsProduct::GetProductByShortName($product);
+              $language = $tempproduct->getLanguage();
 
 							/**
 							 * Does this topic exist?  Look for a topic with this name tagged for the current version and current product.
@@ -2829,7 +2830,8 @@ HEREDOC;
 								}
 							}
 
-							$language = $product->getLanguage();
+							$tempproduct = PonyDocsProduct::GetProductByShortName($product);
+              $language = $tempproduct->getLanguage();
 
 							/**
 							 * Does this topic exist?  Look for a topic with this name tagged for the current version and current product.
