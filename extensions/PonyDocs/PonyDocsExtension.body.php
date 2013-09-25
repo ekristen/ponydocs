@@ -853,7 +853,7 @@ class PonyDocsExtension
 			$cache->remove( $tocKey );
 
 			// Clear any PDF for this manual
-			PonyDocsPdfBook::removeCachedFile($pProduct->getShortName(), $pManual->getShortName(), $pVersion->getName());
+			PonyDocsPdfBook::removeCachedFile($pProduct->getShortName(), $pManual->getShortName(), $pVersion->getName(), $pLanguage);
 
 			$pTOC = new PonyDocsTOC( $pManual, $pVersion, $pProduct, $pLanguage);
 			$pTOC->loadContent( );
@@ -2156,7 +2156,7 @@ HEREDOC;
 			// Then we are in the documentation namespace, but we're not part of 
 			// manual.
 			// Clear any PDF for this manual
-			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version);
+			PonyDocsPdfBook::removeCachedFile($productName, $manual->getShortName(), $version, $manual->getLanguage());
 		}
 
 		// Clear any TOC cache entries this article may be related to.

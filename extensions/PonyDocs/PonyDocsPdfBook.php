@@ -124,7 +124,7 @@ class PonyDocsPdfBook {
 				error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": cache serve username=\""
 					. $wgUser->getName() . "\" product=\"" . $productName . "\" version=\"" . $versionText ."\" "
 					. " manual=\"" . $pManual->getShortName() . "\"");
-				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pManual->getShortName());
+				PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $pManual->getShortName(), $language);
 				// No more processing
 				return false;
 			}
@@ -379,7 +379,7 @@ EOT;
 		// Okay, let's add an entry to the error log to dictate someone requested a pdf
 		error_log("INFO [PonyDocsPdfBook::onUnknownAction] " . php_uname('n') . ": fresh serve username=\""
 			. $wgUser->getName() . "\" version=\"$versionText\" " . " manual=\"" . $book . "\"");
-		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $book);
+		PonyDocsPdfBook::servePdf($pdfFileName, $productName, $versionText, $book, $language);
 		// No more processing
 		return false;
 	}
@@ -389,10 +389,10 @@ EOT;
 	 *
 	 * @param $fileName string The full path to the PDF file.
 	 */
-	static public function servePdf($fileName, $product, $version, $manual) {
+	static public function servePdf($fileName, $product, $version, $manual, $language = PONYDOCS_LANGUAGE_DEFAULT) {
 		if (file_exists($fileName)) {
 			header("Content-Type: application/pdf");
-			header("Content-Disposition: attachment; filename=\"$product-$version-$manual.pdf\"");
+			header("Content-Disposition: attachment; filename=\"$product-$version-$manual-$language.pdf\"");
 			readfile($fileName);
 			die();				// End processing right away.
 		} else {
@@ -409,9 +409,9 @@ EOT;
 	 * @param $manual string The short name of the manual remove
 	 * @param $version string The version of the manual to remove
 	 */
-	static public function removeCachedFile($product, $manual, $version) {
+	static public function removeCachedFile($product, $manual, $version, $language = PONYDOCS_LANGUAGE_DEFAULT) {
 		global $wgUploadDirectory;
-		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-book.pdf";
+		$pdfFileName = "$wgUploadDirectory/ponydocspdf-" . $product . "-" . $version . "-" . $manual . "-" . $language . "-book.pdf";
 		@unlink($pdfFileName);
 		if (file_exists($pdfFileName)) {
 			error_log("ERROR [PonyDocsPdfBook::removeCachedFile] " . php_uname('n')
